@@ -1,0 +1,10 @@
+### vue3
+
+
+
+### 环境
+####  安装packages下面的依赖
+```sh
+ # 给 @vue/reactivity 安装@vue/shared依赖
+ pnpm install @vue/shared --workspace --filter @vue/reactivity
+```
