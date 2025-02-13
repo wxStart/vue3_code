@@ -3,6 +3,8 @@
 
 
 ### 环境
+####  node的esm缺陷
+1. 没有`__dirname`和`require`
 ####  安装packages下面的依赖
 ```sh
  # 给 @vue/reactivity 安装@vue/shared依赖
