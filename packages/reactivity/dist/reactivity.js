@@ -1,44 +1,40 @@
-import { isObject } from '@vue/shared';
-
-enum reactiveFlags {
-  IS_REACTIVE = '__v_isReactive',
+// packages/shared/src/index.ts
+function isObject(value) {
+  return typeof value === "object" && value !== null;
 }
 
-const reactiveMap = new WeakMap();
-
-const mutableHandlers: ProxyHandler<any> = {
+// packages/reactivity/src/index.ts
+var reactiveMap = /* @__PURE__ */ new WeakMap();
+var mutableHandlers = {
   get(target, key, recevier) {
-    if (key === reactiveFlags.IS_REACTIVE) {
+    if (key === "__v_isReactive" /* IS_REACTIVE */) {
       return true;
     }
   },
-
   set(target, key, value, recevier) {
     return true;
-  },
+  }
 };
-
 function createReactiveObj(target) {
   if (!isObject(target)) {
     return target;
   }
-
-  if (target[reactiveFlags.IS_REACTIVE]) {
-    // 被代理过的对象才有这个属性 才会走到get里面
+  if (target["__v_isReactive" /* IS_REACTIVE */]) {
     return target;
   }
-
   const exitsProxy = reactiveMap.get(target);
-  console.log('exitsProxy: ', exitsProxy);
+  console.log("exitsProxy: ", exitsProxy);
   if (exitsProxy) {
     return exitsProxy;
   }
   const proxy = new Proxy(target, mutableHandlers);
   reactiveMap.set(target, proxy);
-
   return proxy;
 }
-
-export function reactive(target) {
+function reactive(target) {
   return createReactiveObj(target);
 }
+export {
+  reactive
+};
+//# sourceMappingURL=reactivity.js.map
