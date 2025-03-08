@@ -3,18 +3,21 @@ function isObject(value) {
   return typeof value === "object" && value !== null;
 }
 
-// packages/reactivity/src/index.ts
-var reactiveMap = /* @__PURE__ */ new WeakMap();
+// packages/reactivity/src/baseHandler.ts
 var mutableHandlers = {
   get(target, key, recevier) {
     if (key === "__v_isReactive" /* IS_REACTIVE */) {
       return true;
     }
+    return Reflect.get(target, key, recevier);
   },
   set(target, key, value, recevier) {
-    return true;
+    return Reflect.set(target, key, value, recevier);
   }
 };
+
+// packages/reactivity/src/reactive.ts
+var reactiveMap = /* @__PURE__ */ new WeakMap();
 function createReactiveObj(target) {
   if (!isObject(target)) {
     return target;
@@ -23,7 +26,6 @@ function createReactiveObj(target) {
     return target;
   }
   const exitsProxy = reactiveMap.get(target);
-  console.log("exitsProxy: ", exitsProxy);
   if (exitsProxy) {
     return exitsProxy;
   }
@@ -34,7 +36,12 @@ function createReactiveObj(target) {
 function reactive(target) {
   return createReactiveObj(target);
 }
+
+// packages/reactivity/src/effect.ts
+function effect() {
+}
 export {
+  effect,
   reactive
 };
 //# sourceMappingURL=reactivity.js.map
