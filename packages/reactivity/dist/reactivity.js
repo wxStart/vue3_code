@@ -12,6 +12,9 @@ function effect(fn, options) {
   return _effect;
 }
 var activeEffet;
+function preCleanEffect(effect2) {
+  effect2._tackId++;
+}
 var eid = 0;
 var ReactiveEffect = class {
   constructor(fn, scheduler) {
@@ -31,6 +34,7 @@ var ReactiveEffect = class {
     let lastEffect = activeEffet;
     try {
       activeEffet = this;
+      preCleanEffect(this);
       return this.fn();
     } finally {
       activeEffet = lastEffect;
@@ -41,8 +45,10 @@ var ReactiveEffect = class {
   }
 };
 function trackEffect(effect2, dep) {
-  dep.set(effect2, effect2._tackId);
-  effect2.deps[effect2._depsLength++] = dep;
+  if (dep.get(effect2) !== effect2._tackId) {
+    dep.set(effect2, effect2._tackId);
+    effect2.deps[effect2._depsLength++] = dep;
+  }
 }
 function triggerEffects(dep) {
   for (const effect2 of dep.keys()) {
@@ -63,7 +69,6 @@ var createDep = (cleanup, key) => {
 function track(target, key) {
   if (activeEffet) {
     console.log(" target, key,activeEffet: ", target, key, activeEffet);
-    debugger;
     let depsMap = targetMap.get(target);
     if (!depsMap) {
       depsMap = /* @__PURE__ */ new Map();

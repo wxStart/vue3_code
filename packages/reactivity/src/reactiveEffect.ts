@@ -15,7 +15,6 @@ export function track(target, key) {
   if (activeEffet) {
     // 在effect中获取的属性才会进行收集
     console.log(' target, key,activeEffet: ', target, key, activeEffet);
-    debugger
 
     let depsMap = targetMap.get(target);
     if (!depsMap) {
