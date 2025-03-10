@@ -13,25 +13,16 @@
       //     effect,
       //   } from '/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js';
 
-      import { reactive, effect } from './reactivity.js';
-      console.log('reactive: 11111', reactive);
+      import { reactive, effect, ref } from './reactivity.js';
+      const state = ref('哈撒黑');
 
-      let obj = {
-        name: 'xxx',
-        age: 18,
-        falg: false,
-        address: {
-          num: 600,
-        },
-      };
-      const state = reactive(obj);
       effect(() => {
-        app.innerHTML = '深层次对象改变无效' + state.address.num;
+        app.innerHTML = 'ref 定义的响应式' + state.value;
       });
 
       setTimeout(() => {
-        state.address.num = 602;
-      }, 1000);
+        state.value += 602;
+      }, 3000);
     </script>
   </body>
 </html>
