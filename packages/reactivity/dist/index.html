@@ -20,12 +20,18 @@
         name: 'xxx',
         age: 18,
         falg: false,
+        address: {
+          num: 600,
+        },
       };
       const state = reactive(obj);
       effect(() => {
-        app.innerHTML = '会陷入死循环' + state.age;
-        state.age++; // 死循环了
+        app.innerHTML = '深层次对象改变无效' + state.address.num;
       });
+
+      setTimeout(() => {
+        state.address.num = 602;
+      }, 1000);
     </script>
   </body>
 </html>
