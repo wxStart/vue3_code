@@ -13,23 +13,32 @@
       //     effect,
       //   } from '/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js';
 
-      import { reactive } from './reactivity.js';
+      import { reactive, effect } from './reactivity.js';
       console.log('reactive: 11111', reactive);
 
       let obj = {
         name: 'xxx',
         age: 18,
-      }
+      };
       const state1 = reactive(obj);
       const state2 = reactive(obj);
       const state3 = reactive(state1);
 
+      console.log(state1.age, state1.name);
       console.log('state1 == state2: ', state1 == state2);
       console.log('state1 == state3: ', state1 == state3);
 
-      //   effect(()=>{
-      //     app.innerHTML =`名字：${state.name}`
-      //   })
+      effect(() => {
+        console.log(state1.age);
+        effect(() => {
+          console.log(state1.age);
+        });
+        app.innerHTML = `名字：${state1.name}  年龄：${state1.age}`;
+      });
+
+      setTimeout(() => {
+        state1.age++;
+      }, 3000);
     </script>
   </body>
 </html>
