@@ -14,6 +14,15 @@ function effect(fn, options) {
 var activeEffet;
 function preCleanEffect(effect2) {
   effect2._tackId++;
+  effect2._depsLength = 0;
+}
+function postCleanEffect(effect2) {
+  if (effect2.deps.length > effect2._depsLength) {
+    for (let index = effect2._depsLength; index < effect2.deps.length; index++) {
+      cleanDepEffect(effect2.deps[index], effect2);
+    }
+    effect2.deps.length = effect2._depsLength;
+  }
 }
 var eid = 0;
 var ReactiveEffect = class {
@@ -37,6 +46,7 @@ var ReactiveEffect = class {
       preCleanEffect(this);
       return this.fn();
     } finally {
+      postCleanEffect(this);
       activeEffet = lastEffect;
     }
   }
@@ -44,10 +54,24 @@ var ReactiveEffect = class {
     this.active = false;
   }
 };
+function cleanDepEffect(dep, effect2) {
+  dep.delete(effect2);
+  if (dep.size == 0) {
+    dep.cleanup();
+  }
+}
 function trackEffect(effect2, dep) {
   if (dep.get(effect2) !== effect2._tackId) {
     dep.set(effect2, effect2._tackId);
-    effect2.deps[effect2._depsLength++] = dep;
+    let oldDep = effect2.deps[effect2._depsLength];
+    if (oldDep != dep) {
+      if (oldDep) {
+        cleanDepEffect(oldDep, effect2);
+      }
+      effect2.deps[effect2._depsLength++] = dep;
+    } else {
+      effect2._depsLength++;
+    }
   }
 }
 function triggerEffects(dep) {

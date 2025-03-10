@@ -19,19 +19,20 @@
       let obj = {
         name: 'xxx',
         age: 18,
+        falg: false,
       };
       const state = reactive(obj);
       effect(() => {
-        effect(() => {
-          console.log(1111)
-          state.age
-        });
-        app.innerHTML = `名字：${state.name}  年龄：${state.age} ${state.age} ${state.age}`;
+        console.log('执行了');
+        app.innerHTML = state.falg ? state.name : state.age;
       });
-      
-      // setTimeout(() => {
-      //   state.age++;
-      // }, 3000);
+
+      setTimeout(() => {
+        state.falg = true;
+        setTimeout(() => {
+          state.age++; // 这时候 falg为true 更改了age是不希望执行的
+        }, 1000);
+      }, 1000);
     </script>
   </body>
 </html>
