@@ -36,9 +36,13 @@ class ReactiveEffect {
 
   deps = [];
   _depsLength = 0;
+
+  _runing = false;
+
   public active = true;
   public eid = eid++;
   constructor(public fn, public scheduler) {}
+
   run() {
     if (!this.active) {
       return this.fn(); // 不是激活的 执行后什么都不做
@@ -46,12 +50,14 @@ class ReactiveEffect {
 
     let lastEffect = activeEffet; // effect 函授中还有effect  记录前一个effect
     try {
+      this._runing = true;
       activeEffet = this;
       preCleanEffect(this);
       return this.fn();
     } finally {
       postCleanEffect(this);
       activeEffet = lastEffect;
+      this._runing = false;
     }
   }
 
@@ -95,8 +101,10 @@ export function trackEffect(effect, dep) {
 
 export function triggerEffects(dep) {
   for (const effect of dep.keys()) {
-    if (effect.scheduler) {
-      effect.scheduler();
+    if (!effect._runing) {
+      if (effect.scheduler) {
+        effect.scheduler();
+      }
     }
   }
 }

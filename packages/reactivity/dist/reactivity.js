@@ -38,6 +38,7 @@ var ReactiveEffect = class {
     // 用于记录effect执行了几次
     this.deps = [];
     this._depsLength = 0;
+    this._runing = false;
     this.active = true;
     this.eid = eid++;
   }
@@ -47,12 +48,14 @@ var ReactiveEffect = class {
     }
     let lastEffect = activeEffet;
     try {
+      this._runing = true;
       activeEffet = this;
       preCleanEffect(this);
       return this.fn();
     } finally {
       postCleanEffect(this);
       activeEffet = lastEffect;
+      this._runing = false;
     }
   }
   stop() {
@@ -81,8 +84,10 @@ function trackEffect(effect2, dep) {
 }
 function triggerEffects(dep) {
   for (const effect2 of dep.keys()) {
-    if (effect2.scheduler) {
-      effect2.scheduler();
+    if (!effect2._runing) {
+      if (effect2.scheduler) {
+        effect2.scheduler();
+      }
     }
   }
 }
