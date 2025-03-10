@@ -20,25 +20,18 @@
         name: 'xxx',
         age: 18,
       };
-      const state1 = reactive(obj);
-      const state2 = reactive(obj);
-      const state3 = reactive(state1);
-
-      console.log(state1.age, state1.name);
-      console.log('state1 == state2: ', state1 == state2);
-      console.log('state1 == state3: ', state1 == state3);
-
+      const state = reactive(obj);
       effect(() => {
-        console.log(state1.age);
         effect(() => {
-          console.log(state1.age);
+          console.log(1111)
+          state.age
         });
-        app.innerHTML = `名字：${state1.name}  年龄：${state1.age}`;
+        app.innerHTML = `名字：${state.name}  年龄：${state.age} ${state.age} ${state.age}`;
       });
-
-      setTimeout(() => {
-        state1.age++;
-      }, 3000);
+      
+      // setTimeout(() => {
+      //   state.age++;
+      // }, 3000);
     </script>
   </body>
 </html>

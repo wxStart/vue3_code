@@ -63,6 +63,7 @@ var createDep = (cleanup, key) => {
 function track(target, key) {
   if (activeEffet) {
     console.log(" target, key,activeEffet: ", target, key, activeEffet);
+    debugger;
     let depsMap = targetMap.get(target);
     if (!depsMap) {
       depsMap = /* @__PURE__ */ new Map();
@@ -74,7 +75,7 @@ function track(target, key) {
       depsMap.set(key, dep);
     }
     trackEffect(activeEffet, dep);
-    console.log("targetMap: ", targetMap);
+    console.log("targetMap:1111 ", targetMap);
   }
 }
 function trigger(target, key, newValue, oldValue) {

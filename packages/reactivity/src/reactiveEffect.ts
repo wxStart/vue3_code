@@ -15,6 +15,7 @@ export function track(target, key) {
   if (activeEffet) {
     // 在effect中获取的属性才会进行收集
     console.log(' target, key,activeEffet: ', target, key, activeEffet);
+    debugger
 
     let depsMap = targetMap.get(target);
     if (!depsMap) {
@@ -31,7 +32,7 @@ export function track(target, key) {
 
     trackEffect(activeEffet, dep); // 将当前的effect 放入dep中 后续根据值变化执行里面的effect。run
 
-    console.log('targetMap: ', targetMap);
+    console.log('targetMap:1111 ', targetMap);
   }
 }
 /**
