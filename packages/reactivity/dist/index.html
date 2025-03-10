@@ -13,7 +13,14 @@
       //     effect,
       //   } from '/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js';
 
-      import { reactive, effect, ref } from './reactivity.js';
+      import {
+        reactive,
+        effect,
+        ref,
+        toRef,
+        toRefs,
+        proxyRefs,
+      } from './reactivity.js';
       const state = ref('哈撒黑');
 
       effect(() => {
@@ -23,6 +30,20 @@
       setTimeout(() => {
         state.value += 602;
       }, 3000);
+
+      let reactive1 = reactive({
+        name: 'wxwx',
+        age: 18,
+      });
+
+      const name = toRef(reactive1, 'name');
+      console.log('toRef', name, name.value);
+
+      const { age } = toRefs(reactive1);
+      console.log('toRefs', age.value);
+
+      const proxy = proxyRefs(toRefs(reactive1));
+      console.log('proxyRefs: ', proxy, proxy.age);
     </script>
   </body>
 </html>

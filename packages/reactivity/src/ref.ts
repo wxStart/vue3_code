@@ -49,3 +49,45 @@ function triggerRefValue(ref) {
     triggerEffects(dep);
   }
 }
+
+class ObjectRefImpl {
+  __v_isRef = true;
+  constructor(public _object, public _key) {}
+  get value() {
+    return this._object[this._key];
+  }
+  set value(newValue) {
+    this._object[this._key] = newValue;
+  }
+}
+
+export function toRef(obj, key) {
+  return new ObjectRefImpl(obj, key);
+}
+
+export function toRefs(obj) {
+  const res = {};
+  for (let key in obj) {
+    res[key] = toRef(obj, key);
+  }
+  return res;
+}
+
+export function proxyRefs(objectWithRef) {
+  return new Proxy(objectWithRef, {
+    get(target, key, recevier) {
+      let r = Reflect.get(target, key, recevier);
+      return r.__v_isRef ? r.value : r;
+    },
+    set(target, key, value, recevier) {
+      let oldValue = target[key];
+
+      if (oldValue.__v_isRef) {
+        oldValue.value = value;
+        return true;
+      } else {
+        return Reflect.set(target, key, value, recevier);
+      }
+    },
+  });
+}
