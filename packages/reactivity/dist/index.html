@@ -22,11 +22,20 @@
         falg: false,
       };
       const state = reactive(obj);
-      effect(() => {
-        console.log('执行了');
-        app.innerHTML = state.falg ? state.name : state.age;
-      });
+      let runner = effect(
+        () => {
+          console.log('执行了');
+          app.innerHTML = state.falg ? state.name : state.age;
+        },
+        {
+          scheduler: () => {
+            console.log('执行自己的调度');
+            runner()
+          },
+        }
+      );
 
+      console.log(111, runner);
       setTimeout(() => {
         state.falg = true;
         setTimeout(() => {
