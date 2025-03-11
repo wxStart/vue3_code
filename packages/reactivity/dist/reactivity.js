@@ -354,6 +354,8 @@ function doWatch(source, cb, { deep }) {
     getter = () => reactiveGetter(source);
   } else if (isRef(source)) {
     getter = () => source.value;
+  } else if (isFunction(source)) {
+    getter = source;
   }
   let oldValue;
   const job = () => {
