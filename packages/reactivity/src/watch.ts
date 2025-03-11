@@ -66,5 +66,11 @@ function doWatch(source, cb, { deep, immediate }) {
     // watchEffect
     effect.run();
   }
+
+  const unwatch = () => {
+    effect.stop();
+  };
+
+  return unwatch;
   console.log('oldValue: 111', oldValue);
 }

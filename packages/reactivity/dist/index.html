@@ -25,10 +25,11 @@
         age: 22,
       });
 
-      watchEffect(() => {
-        //先执行一次 这里一秒后执行一次  然后三秒后在执行一次
+      let unwatch = watchEffect(() => {
         console.log('watchEffect a,b: ', state.name, state.age);
       });
+
+      unwatch(); // 卸载掉了 就不会执行了
 
       setTimeout(() => {
         state.age = 123;
