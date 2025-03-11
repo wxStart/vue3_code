@@ -1,5 +1,6 @@
 import { isObject } from '@vue/shared';
-import { mutableHandlers, reactiveFlags } from './baseHandler';
+import { mutableHandlers } from './baseHandler';
+import { ReactiveFlags } from './constants';
 
 const reactiveMap = new WeakMap();
 
@@ -7,7 +8,7 @@ function createReactiveObj(target) {
   if (!isObject(target)) {
     return target;
   }
-  if (target[reactiveFlags.IS_REACTIVE]) {
+  if (target[ReactiveFlags.IS_REACTIVE]) {
     // 被代理过的对象才有这个属性 才会走到get里面
     return target;
   }
