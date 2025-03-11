@@ -14,7 +14,7 @@ class RefImpl {
   __v_isRef = true;
   _value;
 
-  dep = []; // 用于收集对应的effect
+  dep = {}; // 用于收集对应的effect
   constructor(public rawValue) {
     this._value = toReactive(this.rawValue);
   }
@@ -32,18 +32,20 @@ class RefImpl {
   }
 }
 
-function trackRefvalue(ref) {
+export function trackRefvalue(ref) {
   if (activeEffet) {
     trackEffect(
       activeEffet,
-      (ref.dep = createDep(() => {
-        ref.dep = undefined;
-      }, 'undefined'))
+      (ref.dep =
+        ref.dep ||
+        createDep(() => {
+          ref.dep = undefined;
+        }, 'undefined'))
     );
   }
 }
 
-function triggerRefValue(ref) {
+export function triggerRefValue(ref) {
   const dep = ref.dep;
   if (dep) {
     triggerEffects(dep);

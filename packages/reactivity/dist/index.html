@@ -17,33 +17,25 @@
         reactive,
         effect,
         ref,
-        toRef,
-        toRefs,
-        proxyRefs,
+        computed
       } from './reactivity.js';
       const state = ref('哈撒黑');
 
+      const computedval = computed({
+        get(){
+          console.log('计算属性get执行了')
+          return state.value
+        }
+      })
+
       effect(() => {
-        app.innerHTML = 'ref 定义的响应式' + state.value;
+        app.innerHTML = '计算属性的值' + computedval.value + computedval.value  ;
       });
 
       setTimeout(() => {
         state.value += 602;
       }, 3000);
 
-      let reactive1 = reactive({
-        name: 'wxwx',
-        age: 18,
-      });
-
-      const name = toRef(reactive1, 'name');
-      console.log('toRef', name, name.value);
-
-      const { age } = toRefs(reactive1);
-      console.log('toRefs', age.value);
-
-      const proxy = proxyRefs(toRefs(reactive1));
-      console.log('proxyRefs: ', proxy, proxy.age);
     </script>
   </body>
 </html>
