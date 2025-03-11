@@ -7,6 +7,10 @@ export function watch(source, cb, optipns: any = {}) {
   return doWatch(source, cb, optipns);
 }
 
+export function watchEffect(source, optipns: any = {}) {
+  return doWatch(source, null, optipns);
+}
+
 function traverse(source, depth, currentDepoth = 0, seen = new Set()) {
   if (!isObject(source)) {
     return source;
@@ -28,7 +32,7 @@ function traverse(source, depth, currentDepoth = 0, seen = new Set()) {
   return source;
 }
 
-function doWatch(source, cb, { deep }) {
+function doWatch(source, cb, { deep, immediate }) {
   const reactiveGetter = (data) =>
     traverse(data, deep == false ? 1 : undefined);
 
@@ -43,11 +47,24 @@ function doWatch(source, cb, { deep }) {
   let oldValue;
 
   const job = () => {
-    const newValue = effect.run();
-    cb(newValue, oldValue);
-    oldValue = newValue;
+    if (cb) {
+      const newValue = effect.run();
+      cb(newValue, oldValue);
+      oldValue = newValue;
+    } else {
+      effect.run();
+    }
   };
   const effect = new ReactiveEffect(getter, job);
-  oldValue = effect.run();
+  if (cb) {
+    if (immediate) {
+      job();
+    } else {
+      oldValue = effect.run();
+    }
+  } else {
+    // watchEffect
+    effect.run();
+  }
   console.log('oldValue: 111', oldValue);
 }
