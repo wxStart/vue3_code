@@ -13,29 +13,25 @@
       //     effect,
       //   } from '/node_modules/@vue/reactivity/dist/reactivity.esm-browser.js';
 
-      import {
-        reactive,
-        effect,
-        ref,
-        computed
-      } from './reactivity.js';
-      const state = ref('哈撒黑');
+      import { reactive, effect, ref, watch } from './reactivity.js';
+      const state = reactive({
+        name: 11,
+        age: 22,
+      });
 
-      const computedval = computed({
-        get(){
-          console.log('计算属性get执行了')
-          return state.value
-        }
-      })
+      const state1 = ref(222);
+      watch(state, function (a, b) {
+        console.log('a,b: ', a, b);
+      });
 
-      effect(() => {
-        app.innerHTML = '计算属性的值' + computedval.value + computedval.value  ;
+      watch(state1, function (a, b) {
+        console.log('a,b: ', a, b);
       });
 
       setTimeout(() => {
-        state.value += 602;
+        state.name = 602;
+        state1.value =12;
       }, 3000);
-
     </script>
   </body>
 </html>

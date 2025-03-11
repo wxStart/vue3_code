@@ -14,7 +14,7 @@ class RefImpl {
   __v_isRef = true;
   _value;
 
-  dep = {}; // 用于收集对应的effect
+  dep // 用于收集对应的effect
   constructor(public rawValue) {
     this._value = toReactive(this.rawValue);
   }
@@ -33,6 +33,7 @@ class RefImpl {
 }
 
 export function trackRefvalue(ref) {
+  console.log(' ref.dep: ',  ref.dep);
   if (activeEffet) {
     trackEffect(
       activeEffet,
@@ -92,4 +93,8 @@ export function proxyRefs(objectWithRef) {
       }
     },
   });
+}
+
+export function isRef(value) {
+  return value && value.__v_isRef;
 }

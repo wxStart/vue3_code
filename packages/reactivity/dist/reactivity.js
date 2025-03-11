@@ -197,6 +197,9 @@ function reactive(target) {
 function toReactive(value) {
   return isObject(value) ? reactive(value) : value;
 }
+function isReactive(value) {
+  return value && value["__v_isReactive" /* IS_REACTIVE */];
+}
 
 // packages/reactivity/src/ref.ts
 function ref(value) {
@@ -210,7 +213,6 @@ var RefImpl = class {
   constructor(rawValue) {
     this.rawValue = rawValue;
     this.__v_isRef = true;
-    this.dep = {};
     this._value = toReactive(this.rawValue);
   }
   get value() {
@@ -226,6 +228,7 @@ var RefImpl = class {
   }
 };
 function trackRefvalue(ref2) {
+  console.log(" ref.dep: ", ref2.dep);
   if (activeEffet) {
     trackEffect(
       activeEffet,
@@ -281,6 +284,9 @@ function proxyRefs(objectWithRef) {
     }
   });
 }
+function isRef(value) {
+  return value && value.__v_isRef;
+}
 
 // packages/reactivity/src/computed.ts
 var ComputedRefImpl = class {
@@ -318,11 +324,54 @@ function computed(getterOrOptions) {
   }
   return new ComputedRefImpl(getter, setter);
 }
+
+// packages/reactivity/src/watch.ts
+function watch(source, cb, optipns = {}) {
+  return doWatch(source, cb, optipns);
+}
+function traverse(source, depth, currentDepoth = 0, seen = /* @__PURE__ */ new Set()) {
+  if (!isObject(source)) {
+    return source;
+  }
+  if (depth) {
+    if (currentDepoth >= depth) {
+      return source;
+    }
+    currentDepoth++;
+  }
+  if (seen.has(source)) {
+    return source;
+  }
+  for (const key in source) {
+    traverse(source[key], depth, currentDepoth, seen);
+  }
+  return source;
+}
+function doWatch(source, cb, { deep }) {
+  const reactiveGetter = (data) => traverse(data, deep == false ? 1 : void 0);
+  let getter;
+  if (isReactive(source)) {
+    getter = () => reactiveGetter(source);
+  } else if (isRef(source)) {
+    getter = () => source.value;
+  }
+  let oldValue;
+  const job = () => {
+    const newValue = effect2.run();
+    cb(newValue, oldValue);
+    oldValue = newValue;
+  };
+  const effect2 = new ReactiveEffect(getter, job);
+  oldValue = effect2.run();
+  console.log("oldValue: 111", oldValue);
+}
 export {
   ReactiveEffect,
   activeEffet,
   computed,
   effect,
+  isReactive,
+  isRef,
   proxyRefs,
   reactive,
   ref,
@@ -332,6 +381,7 @@ export {
   trackEffect,
   trackRefvalue,
   triggerEffects,
-  triggerRefValue
+  triggerRefValue,
+  watch
 };
 //# sourceMappingURL=reactivity.js.map
