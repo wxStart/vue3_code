@@ -6,7 +6,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "node scripts/dev.js reactivity -f esm"
+    "dev":"npm run dev:runtime-dom",
+    "dev:reactivity": "node scripts/dev.js reactivity -f esm",
+    "dev:runtime-dom": "node scripts/dev.js runtime-dom -f esm"
   },
   "keywords": [],
   "author": "",
