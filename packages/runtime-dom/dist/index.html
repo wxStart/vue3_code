@@ -9,13 +9,13 @@
     <div id="app">111</div>
     <script type="module">
       import {
-        createRenderer,
-        render,
+        // createRenderer,
+        // render,
         h,
       } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
-      import { renderOptions } from './runtime-dom.js';
+      import { render } from './runtime-dom.js';
 
-      let ele = h(
+      let ele1 = h(
         'h1',
         {
           style: {
@@ -25,11 +25,39 @@
           a: 121,
           onClick: () => alert(1111),
         },
-        '哈哈啥回收'
+        h(
+          'h2',
+          {
+            onClick: () => alert(2222),
+          },
+          'h2222221'
+        ),
+        h(
+          'h2',
+          {
+            onClick: () => alert(2222),
+          },
+          'h2222222'
+        )
       );
 
-      let renderer = createRenderer(renderOptions);
-      renderer.render(ele, app);
+      render(ele1, app);
+
+      let ele2 = h(
+        'h1',
+        {
+          style: {
+            color: 'green',
+          },
+          class: 'class_Abc',
+          a: 121,
+          onClick: () => alert(1111),
+        },
+        '哈哈啥回收'
+      );
+      setTimeout(() => {
+        render(ele2, app);
+      }, 300);
     </script>
   </body>
 </html>
