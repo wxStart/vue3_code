@@ -8,13 +8,10 @@
   <body>
     <div id="app">111</div>
     <script type="module">
-      import {
-        // render,
-        // h,
-      } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
-      import { render,
-        h
-       } from './runtime-dom.js';
+      import // render,
+      // h,
+      '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
+      import { render, h } from './runtime-dom.js';
 
       let ele1 = h(
         'h1',
@@ -22,29 +19,29 @@
           style: {
             color: 'red',
           },
+          b: 1234,
+          onClick: () => alert('第一个事件'),
         },
-        h('div', {},'a'),
-        h('div', {},'B')
+        '你好'
       );
-      console.log('ele1: ', ele1);
 
       render(ele1, app);
 
-      // let ele2 = h(
-      //   'h1',
-      //   {
-      //     style: {
-      //       color: 'green',
-      //     },
-      //     class: 'class_Abc',
-      //     a: 121,
-      //     onClick: () => alert(1111),
-      //   },
-      //   '哈哈啥回收'
-      // );
-      // setTimeout(() => {
-      //   render(ele2, app);
-      // }, 300);
+      let ele2 = h(
+        'h1',
+        {
+          style: {
+            color: 'green',
+          },
+          class: 'class_Abc',
+          a: 121,
+          onClick: () => alert('第二个事件'),
+        },
+        '哈哈啥回收'
+      );
+      setTimeout(() => {
+        render(ele2, app);
+      }, 3000);
     </script>
   </body>
 </html>
