@@ -1,4 +1,6 @@
 export * from '@vue/reactivity';
+export * from '@vue/runtime-core';
+
 
 import { nodeOps } from './nodeOps';
 import { patchProp } from './patchProp';
@@ -13,4 +15,3 @@ export const renderOptions = Object.assign(nodeOps, {
 export const render = (vnode, container) => {
   return createRenderer(renderOptions).render(vnode, container);
 };
-export * from '@vue/reactivity';
