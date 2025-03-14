@@ -6,7 +6,7 @@ export function patchStyle(el: HTMLElement, prevValue, nextValue = {}) {
     }
     if (prevValue) {
       for (let key in prevValue) {
-        if (!nextValue[key]) {
+        if (nextValue && !nextValue[key]) {
           style[key] = null;
         }
       }

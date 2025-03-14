@@ -70,7 +70,65 @@ export function createRenderer(renderOptions) {
     }
   };
 
-  const patchChildren = (n1, n2, container){};
+  const unmountChildren = (children) => {
+    for (let index = 0; index < children.length; index++) {
+      const element = children[index];
+      unmount(element);
+    }
+  };
+  const patchChildren = (n1, n2, el) => {
+    /**
+
+    // 孩子可能是文本  数组  空
+     1.  老的是数组  新的是文本或者是空  移除老的 插入新的
+     2.  老的是数组  新的是数组 进行diff
+     3.  老的是文本  新的是数组   
+     4.  老的是文本  新的是文或者是空   替换内容
+     5.  老的是空  新的数组   
+     6.  老的是空 新的是文本或者空  替换内容
+    */
+
+    let c1 = n1.children;
+    let c2 = n2.children;
+    let prevShapeFlag = n1.shapeFlag;
+    let shapeFlag = n2.shapeFlag;
+
+    if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        //2.  老的是数组  新的是数组 进行diff
+        // todo diff算法
+
+      } else {
+        // 1. 老的是数组  新的是文本（或者空）   移除老的 插入新的
+        unmountChildren(c1);
+        if (c1 !== c2) {
+          hostSetElementText(el, c2);
+        }
+      }
+    } else {
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          hostSetElementText(el, '');
+          mountChildren(c2, el);
+        } else {
+          // 4.  老的是文本  新的是文或者是空   替换内容
+          if (c1 !== c2) {
+            hostSetElementText(el, c2);
+          }
+        }
+      } else {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // 5.  老的是空  新的数组
+          mountChildren(c2, el);
+        } else {
+          // 6.  老的是空  新的是文或者是空   替换内容
+          if (c1 !== c2) {
+            hostSetElementText(el, c2);
+          }
+        }
+      }
+    }
+  };
 
   const patchElement = (n1, n2, container) => {
     /*
@@ -79,17 +137,15 @@ export function createRenderer(renderOptions) {
     3.比较子节点
     */
 
-
-     // 1.比较元素的差异，肯定需要复用dom
+    // 1.比较元素的差异，肯定需要复用dom
     let el = (n2.el = n1.el); // dom复用
 
     let oldProps = n1.props || {};
     let newProps = n2.props || {};
-   // 2.比较属性
+    // 2.比较属性
     patchProps(oldProps, newProps, el);
     // 3.比较子节点
-    // todo  这次写到比较孩子的函数入口
-    patchChildren(n1, n2, container);
+    patchChildren(n1, n2, el);
   };
   const patch = (n1, n2, container) => {
     if (n1 == n2) {

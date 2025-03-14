@@ -22,7 +22,7 @@
           b: 1234,
           onClick: () => alert('第一个事件'),
         },
-        '你好'
+        'dsds'
       );
 
       render(ele1, app);
@@ -31,13 +31,15 @@
         'h1',
         {
           style: {
-            color: 'green',
           },
           class: 'class_Abc',
           a: 121,
           onClick: () => alert('第二个事件'),
         },
-        '哈哈啥回收'
+        [
+          h('div','dsadsa'),
+          h('div','dsadsass')
+        ]
       );
       setTimeout(() => {
         render(ele2, app);
