@@ -13,33 +13,37 @@
       '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
       import { render, h } from './runtime-dom.js';
 
+      let arr1 = ['A', 'B','C','D','E','Q(删除的)','F','G'];
+      let arr2 = ['A', 'B','E','C','D','H(新增的)','F','G' ];  
       let ele1 = h(
         'h1',
-        {
-          style: {
-            color: 'red',
-          },
-          b: 1234,
-          onClick: () => alert('第一个事件'),
-        },
-        'dsds'
+        arr1.map((el) => {
+          return h(
+            'div',
+            {
+              key: el,
+            },
+            el
+          );
+        })
       );
 
       render(ele1, app);
 
       let ele2 = h(
         'h1',
-        {
-          style: {
-          },
-          class: 'class_Abc',
-          a: 121,
-          onClick: () => alert('第二个事件'),
-        },
-        [
-          h('div','dsadsa'),
-          h('div','dsadsass')
-        ]
+        arr2.map((el) => {
+          return h(
+            'div',
+            {
+              key: el,
+              style: {
+                color: 'red',
+              },
+            },
+            el
+          );
+        })
       );
       setTimeout(() => {
         render(ele2, app);

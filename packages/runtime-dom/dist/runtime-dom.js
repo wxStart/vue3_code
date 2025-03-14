@@ -399,7 +399,7 @@ function isVnode(value) {
   return value?.__v_isVnode;
 }
 function isSameVnode(n1, n2) {
-  return n1.type === n2.type && n1.key === n1.key;
+  return n1.type === n2.type && n1.key === n2.key;
 }
 function createVnode(type, props, children) {
   const shapeFlag = isString(type) ? 1 /* ELEMENT */ : 0;
@@ -469,7 +469,7 @@ function createRenderer(renderOptions2) {
       patch(null, children[index], container);
     }
   };
-  const mountElement = (vnode, container) => {
+  const mountElement = (vnode, container, anchor) => {
     console.log("vnode: ", vnode);
     const { type, children, props, shapeFlag } = vnode;
     let el = vnode.el = hostCreateElement(type);
@@ -483,11 +483,11 @@ function createRenderer(renderOptions2) {
     } else if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
       mountChildren(children, el);
     }
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   };
-  const processElement = (n1, n2, container) => {
+  const processElement = (n1, n2, container, anchor) => {
     if (n1 === null) {
-      mountElement(n2, container);
+      mountElement(n2, container, anchor);
     } else {
       patchElement(n1, n2, container);
     }
@@ -508,6 +508,81 @@ function createRenderer(renderOptions2) {
       unmount(element);
     }
   };
+  const patchKeyedChildren = (c1, c2, el) => {
+    let i = 0;
+    let e1 = c1.length - 1;
+    let e2 = c2.length - 1;
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i];
+      const n2 = c2[i];
+      if (isSameVnode(n1, n2)) {
+        patch(n1, n2, el);
+      } else {
+        console.log("z\u8D70\u5230\u8FD9\u91CC: ");
+        break;
+      }
+      i++;
+    }
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1];
+      const n2 = c2[e2];
+      if (isSameVnode(n1, n2)) {
+        patch(n1, n2, el);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
+    if (i > e1) {
+      if (i <= e2) {
+        const nextPos = e2 + 1;
+        let anchor = c2[nextPos]?.el;
+        console.log("anchor: ", anchor);
+        while (i <= e2) {
+          patch(null, c2[i], el, anchor);
+          i++;
+        }
+      }
+    } else if (i > e2) {
+      if (i <= e1) {
+        while (i <= e1) {
+          unmount(c1[i]);
+          i++;
+        }
+      }
+    } else {
+      console.log("i: ", i, e1, e2);
+      let s1 = i;
+      let s2 = i;
+      const keyToNewIndexMap = /* @__PURE__ */ new Map();
+      for (let index = s2; index <= e2; index++) {
+        const vnode = c2[index];
+        keyToNewIndexMap.set(vnode.key, index);
+      }
+      console.log("keyToNewIndexMap: ", keyToNewIndexMap);
+      for (let index = s1; index <= e1; index++) {
+        const oldVnode = c1[index];
+        const newIndex = keyToNewIndexMap.get(oldVnode.key);
+        if (newIndex == void 0) {
+          unmount(oldVnode);
+        } else {
+          patch(oldVnode, c2[newIndex], el);
+        }
+      }
+      let toBePatched = e2 - s2 + 1;
+      for (let index = toBePatched; index >= 0; index--) {
+        let newIndex = s2 + index;
+        let anchor = c2[newIndex + 1]?.el;
+        const vnode = c2[newIndex];
+        if (!vnode.el) {
+          patch(null, vnode, el, anchor);
+        } else {
+          hostInsert(vnode.el, el, anchor);
+        }
+      }
+    }
+  };
   const patchChildren = (n1, n2, el) => {
     let c1 = n1.children;
     let c2 = n2.children;
@@ -515,6 +590,7 @@ function createRenderer(renderOptions2) {
     let shapeFlag = n2.shapeFlag;
     if (prevShapeFlag & 16 /* ARRAY_CHILDREN */) {
       if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+        patchKeyedChildren(c1, c2, el);
       } else {
         unmountChildren(c1);
         if (c1 !== c2) {
@@ -549,7 +625,7 @@ function createRenderer(renderOptions2) {
     patchProps(oldProps, newProps, el);
     patchChildren(n1, n2, el);
   };
-  const patch = (n1, n2, container) => {
+  const patch = (n1, n2, container, anchor = null) => {
     if (n1 == n2) {
       return;
     }
@@ -557,7 +633,7 @@ function createRenderer(renderOptions2) {
       unmount(n1);
       n1 = null;
     }
-    processElement(n1, n2, container);
+    processElement(n1, n2, container, anchor);
   };
   const unmount = (vnode) => {
     hostRemove(vnode.el);
