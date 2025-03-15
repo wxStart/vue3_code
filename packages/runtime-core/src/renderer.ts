@@ -338,7 +338,7 @@ export function createRenderer(renderOptions) {
     const state = reactive(data());
     const instance = {
       state,
-      vnode: null,
+      vnode: n2,
       subTree: null,
       isMounted: false,
       update: null,
@@ -358,8 +358,7 @@ export function createRenderer(renderOptions) {
     const effect = new ReactiveEffect(componentUpdate, () => {
       update();
     });
-    const update = () => effect.run();
-
+    const update = (instance.update = () => effect.run());
     update();
   };
   const processComponent = (n1, n2, continer, anchor) => {

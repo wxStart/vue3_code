@@ -703,7 +703,7 @@ function createRenderer(renderOptions2) {
     const state = reactive(data());
     const instance = {
       state,
-      vnode: null,
+      vnode: n2,
       subTree: null,
       isMounted: false,
       update: null
@@ -723,7 +723,7 @@ function createRenderer(renderOptions2) {
     const effect2 = new ReactiveEffect(componentUpdate, () => {
       update();
     });
-    const update = () => effect2.run();
+    const update = instance.update = () => effect2.run();
     update();
   };
   const processComponent = (n1, n2, continer, anchor) => {
