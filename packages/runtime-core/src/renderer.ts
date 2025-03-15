@@ -326,11 +326,12 @@ export function createRenderer(renderOptions) {
         // 第二次传入的节点是null 说明要移除改容器中的dom元素
         unmount(container._vnode);
       }
+    } else {
+      // 将虚拟节点变成真实节点
+      // console.log('vnode, container: ', vnode, container);
+      patch(container._vnode || null, vnode, container);
+      container._vnode = vnode;
     }
-    // 将虚拟节点变成真实节点
-    // console.log('vnode, container: ', vnode, container);
-    patch(container._vnode || null, vnode, container);
-    container._vnode = vnode;
   };
 
   return {
