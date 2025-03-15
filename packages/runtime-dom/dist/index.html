@@ -8,22 +8,29 @@
   <body>
     <div id="app">111</div>
     <script type="module">
-      // import // render,
-      // h,
-      // '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
-      import { render, h, Text,Fragment } from './runtime-dom.js';
+      import {
+        // h,
+        // render,
+        reactive,
+      } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
+      import { render, h, Text, Fragment } from './runtime-dom.js';
 
-      let ele1 = h(Fragment,[h('div','div1'),h('div','div2')] );
-      let ele2 = h(Fragment,[h('div','div12'),h('div','div22')] );
+      const VueComponent = {
+        data() {
+          return { name: 'wx', age: 19 };
+        },
+        render(proxy) {
+          setTimeout(() => {
+            this.age++;
+          }, 1000);
+          return h('div', [
+            h('div', `name:${this.name}`),
+            h('div', `age:${proxy.age}`),
+          ]);
+        },
+      };
 
-      render(ele1, app);
-
-      setTimeout(() => {
-        render(ele2, app);
-      }, 3000);
-      setTimeout(() => {
-        render(null, app);
-      }, 6000);
+      render(h(VueComponent), app);
     </script>
   </body>
 </html>
