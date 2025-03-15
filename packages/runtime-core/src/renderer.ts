@@ -1,5 +1,5 @@
 import { ShapeFlags } from '@vue/shared';
-import { isSameVnode } from './createVnode';
+import { isSameVnode, Text } from './createVnode';
 import { getSequence } from './seq';
 
 export function createRenderer(renderOptions) {
@@ -57,6 +57,21 @@ export function createRenderer(renderOptions) {
       mountElement(n2, container, anchor);
     } else {
       patchElement(n1, n2, container);
+    }
+  };
+
+  const processText = (n1, n2, container) => {
+    // n1 是null 说明是初次渲染
+    if (n1 === null) {
+      //创建节点和 虚拟节点关联
+      const textel = (n2.el = hostCreateText(n2.children));
+      hostInsert(textel, container);
+    } else {
+      if (n1.children !== n2.children) {
+        const el = (n2.el = n1.el);
+        // hostSetText(el, n2.children);
+        hostSetElementText(el, n2.children);
+      }
     }
   };
 
@@ -313,7 +328,14 @@ export function createRenderer(renderOptions) {
       unmount(n1);
       n1 = null; // 这样就是直接走下面 mountElement 直接初次渲染n2
     }
-    processElement(n1, n2, container, anchor);
+    const { type } = n2;
+    switch (type) {
+      case Text:
+        processText(n1, n2, container);
+        break;
+      default:
+        processElement(n1, n2, container, anchor);
+    }
   };
 
   const unmount = (vnode) => {

@@ -395,6 +395,7 @@ function doWatch(source, cb, { deep, immediate }) {
 }
 
 // packages/runtime-core/src/createVnode.ts
+var Text = Symbol("Text");
 function isVnode(value) {
   return value?.__v_isVnode;
 }
@@ -532,6 +533,17 @@ function createRenderer(renderOptions2) {
       mountElement(n2, container, anchor);
     } else {
       patchElement(n1, n2, container);
+    }
+  };
+  const processText = (n1, n2, container) => {
+    if (n1 === null) {
+      const textel = n2.el = hostCreateText(n2.children);
+      hostInsert(textel, container);
+    } else {
+      if (n1.children !== n2.children) {
+        const el = n2.el = n1.el;
+        hostSetElementText(el, n2.children);
+      }
     }
   };
   const patchProps = (oldProps, newProps, el) => {
@@ -685,7 +697,14 @@ function createRenderer(renderOptions2) {
       unmount(n1);
       n1 = null;
     }
-    processElement(n1, n2, container, anchor);
+    const { type } = n2;
+    switch (type) {
+      case Text:
+        processText(n1, n2, container);
+        break;
+      default:
+        processElement(n1, n2, container, anchor);
+    }
   };
   const unmount = (vnode) => {
     hostRemove(vnode.el);
@@ -807,13 +826,17 @@ var render = (vnode, container) => {
 };
 export {
   ReactiveEffect,
+  Text,
   activeEffet,
   computed,
   createRenderer,
+  createVnode,
   effect,
   h,
   isReactive,
   isRef,
+  isSameVnode,
+  isVnode,
   proxyRefs,
   reactive,
   ref,

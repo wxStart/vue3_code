@@ -11,43 +11,19 @@
       import // render,
       // h,
       '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
-      import { render, h } from './runtime-dom.js';
+      import { render, h, Text } from './runtime-dom.js';
 
-      let arr1 = ['A', 'B','C','D','E','Q(删除的)','F','G'];
-      let arr2 = ['A', 'B','E','C','D','H(新增的)','F','G' ];  
-      let ele1 = h(
-        'h1',
-        arr1.map((el) => {
-          return h(
-            'div',
-            {
-              key: el,
-            },
-            el
-          );
-        })
-      );
+      let ele1 = h(Text, '文本');
+      console.log('ele1: ', ele1);
 
       render(ele1, app);
 
-      let ele2 = h(
-        'h1',
-        arr2.map((el) => {
-          return h(
-            'div',
-            {
-              key: el,
-              // style: {
-              //   color: 'red',
-              // },
-            },
-            el
-          );
-        })
-      );
       setTimeout(() => {
-        render(ele2, app);
+        render(h(Text, '文本2222'), app);
       }, 3000);
+      setTimeout(() => {
+        render(null, app);
+      }, 6000);
     </script>
   </body>
 </html>
