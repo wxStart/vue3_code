@@ -337,11 +337,11 @@ export function createRenderer(renderOptions) {
     const { data = () => {}, render } = n2.type;
     const state = reactive(data());
     const instance = {
-      state,
-      vnode: n2,
-      subTree: null,
-      isMounted: false,
-      update: null,
+      state, // 组件的状态
+      vnode: n2, // 组件的虚拟节点
+      subTree: null, // 子树
+      isMounted: false, // 是否挂载完成
+      update: null, // 组件的更新函数
     };
     const componentUpdate = () => {
       if (!instance.isMounted) {

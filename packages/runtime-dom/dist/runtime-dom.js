@@ -703,10 +703,15 @@ function createRenderer(renderOptions2) {
     const state = reactive(data());
     const instance = {
       state,
+      // 组件的状态
       vnode: n2,
+      // 组件的虚拟节点
       subTree: null,
+      // 子树
       isMounted: false,
+      // 是否挂载完成
       update: null
+      // 组件的更新函数
     };
     const componentUpdate = () => {
       if (!instance.isMounted) {
