@@ -2,6 +2,7 @@ import { ShapeFlags } from '@vue/shared';
 import { Fragment, isSameVnode, Text } from './createVnode';
 import { getSequence } from './seq';
 import { reactive, ReactiveEffect } from '@vue/reactivity';
+import { queueJob } from './schedule';
 
 export function createRenderer(renderOptions) {
   const {
@@ -356,7 +357,7 @@ export function createRenderer(renderOptions) {
       }
     };
     const effect = new ReactiveEffect(componentUpdate, () => {
-      update();
+      queueJob(update);
     });
     const update = (instance.update = () => effect.run());
     update();

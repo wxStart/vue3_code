@@ -495,6 +495,28 @@ function getSequence(arr) {
   return result;
 }
 
+// packages/runtime-core/src/schedule.ts
+var queue = [];
+var isFlushing = false;
+var resolvePromise = Promise.resolve();
+function queueJob(job) {
+  if (!queue.includes(job)) {
+    queue.push(job);
+  }
+  if (!isFlushing) {
+    isFlushing = true;
+    resolvePromise.then(() => {
+      isFlushing = false;
+      const copy = queue.slice(0);
+      queue.length = 0;
+      copy.forEach((job2) => {
+        job2();
+      });
+      copy.length = 0;
+    });
+  }
+}
+
 // packages/runtime-core/src/renderer.ts
 function createRenderer(renderOptions2) {
   const {
@@ -726,7 +748,7 @@ function createRenderer(renderOptions2) {
       }
     };
     const effect2 = new ReactiveEffect(componentUpdate, () => {
-      update();
+      queueJob(update);
     });
     const update = instance.update = () => effect2.run();
     update();

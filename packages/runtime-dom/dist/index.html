@@ -20,7 +20,9 @@
           return { name: 'wx', age: 19 };
         },
         render(proxy) {
+          console.log('render')
           setTimeout(() => {
+            this.age++;
             this.age++;
           }, 1000);
           return h('div', [
