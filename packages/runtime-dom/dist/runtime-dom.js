@@ -451,6 +451,48 @@ function h(type, propsOrChildren, children) {
   }
 }
 
+// packages/runtime-core/src/seq.ts
+function getSequence(arr) {
+  const result = [0];
+  let p = result.slice(0);
+  const len = arr.length;
+  let start = 0;
+  let end = result.length - 1;
+  let minddle;
+  for (let i = 0; i < len; i++) {
+    const arrI = arr[i];
+    if (arrI !== 0) {
+      const resultLastIndex = result[result.length - 1];
+      if (arr[resultLastIndex] < arrI) {
+        p[i] = result[result.length - 1];
+        result.push(i);
+        continue;
+      }
+      start = 0;
+      end = result.length - 1;
+      while (start < end) {
+        minddle = (start + end) / 2 | 0;
+        if (arr[result[minddle]] < arrI) {
+          start = minddle + 1;
+        } else {
+          end = minddle;
+        }
+      }
+      if (arrI < arr[result[start]]) {
+        p[i] = result[start - 1];
+        result[start] = i;
+      }
+    }
+  }
+  let rlen = result.length;
+  let last = result[rlen - 1];
+  while (rlen-- > 0) {
+    result[rlen] = last;
+    last = p[last];
+  }
+  return result;
+}
+
 // packages/runtime-core/src/renderer.ts
 function createRenderer(renderOptions2) {
   const {
@@ -556,6 +598,8 @@ function createRenderer(renderOptions2) {
       let s1 = i;
       let s2 = i;
       const keyToNewIndexMap = /* @__PURE__ */ new Map();
+      let toBePatched = e2 - s2 + 1;
+      let newIndextoOldMapIndex = new Array(toBePatched).fill(0);
       for (let index = s2; index <= e2; index++) {
         const vnode = c2[index];
         keyToNewIndexMap.set(vnode.key, index);
@@ -567,10 +611,14 @@ function createRenderer(renderOptions2) {
         if (newIndex == void 0) {
           unmount(oldVnode);
         } else {
+          newIndextoOldMapIndex[newIndex - s2] = index + 1;
           patch(oldVnode, c2[newIndex], el);
         }
       }
-      let toBePatched = e2 - s2 + 1;
+      console.log("newIndextoOldMapIndex: ", newIndextoOldMapIndex);
+      const increasingSeq = getSequence(newIndextoOldMapIndex);
+      console.log("increasingSeq: ", increasingSeq);
+      let j = increasingSeq.length - 1;
       for (let index = toBePatched; index >= 0; index--) {
         let newIndex = s2 + index;
         let anchor = c2[newIndex + 1]?.el;
@@ -578,7 +626,11 @@ function createRenderer(renderOptions2) {
         if (!vnode.el) {
           patch(null, vnode, el, anchor);
         } else {
-          hostInsert(vnode.el, el, anchor);
+          if (index == increasingSeq[j]) {
+            j--;
+          } else {
+            hostInsert(vnode.el, el, anchor);
+          }
         }
       }
     }

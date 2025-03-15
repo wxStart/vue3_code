@@ -1,5 +1,6 @@
 import { ShapeFlags } from '@vue/shared';
 import { isSameVnode } from './createVnode';
+import { getSequence } from './seq';
 
 export function createRenderer(renderOptions) {
   const {
@@ -177,11 +178,16 @@ export function createRenderer(renderOptions) {
       i= 2   el=4  e2=5
 
       */
+
       console.log('i: ', i, e1, e2);
       let s1 = i;
       let s2 = i;
       // 这里有点类似vue2了
       const keyToNewIndexMap = new Map(); // 做一个映射表，看看老的是在新的里面，没有就删除 有的话就更新
+
+      let toBePatched = e2 - s2 + 1;
+      let newIndextoOldMapIndex = new Array(toBePatched).fill(0); // 新的在老的位置的下标索引
+
       for (let index = s2; index <= e2; index++) {
         const vnode = c2[index];
         keyToNewIndexMap.set(vnode.key, index);
@@ -196,12 +202,19 @@ export function createRenderer(renderOptions) {
           unmount(oldVnode);
         } else {
           // 说明找到了
+          newIndextoOldMapIndex[newIndex - s2] = index + 1; // 避免index是0的情况， 是0的说明没有经过patch，是一个新节点
           patch(oldVnode, c2[newIndex], el); // 但是顺序不对
         }
       }
+      console.log('newIndextoOldMapIndex: ', newIndextoOldMapIndex);
+      // [5,3,4,0] ---> 根据最长子序列【2,3】对应的索引下标【1,2】
+
+      const increasingSeq = getSequence(newIndextoOldMapIndex); // 找到不动的元素的下标数组
+      console.log('increasingSeq: ', increasingSeq);
+
+      let j = increasingSeq.length - 1;
 
       // 调整顺序  一定是倒序插入 因为用的insertBefore
-      let toBePatched = e2 - s2 + 1;
       for (let index = toBePatched; index >= 0; index--) {
         let newIndex = s2 + index;
         let anchor = c2[newIndex + 1]?.el;
@@ -209,8 +222,12 @@ export function createRenderer(renderOptions) {
         if (!vnode.el) {
           patch(null, vnode, el, anchor);
         } else {
-          // el存在说明 是老的里面的 把老的移动到某个锚点位置
-          hostInsert(vnode.el, el, anchor);
+          if (index == increasingSeq[j]) {
+            j--; // 元素的复用 不需要移动位置
+          } else {
+            // el存在说明 是老的里面的 把老的移动到某个锚点位置
+            hostInsert(vnode.el, el, anchor);
+          }
         }
       }
     }
