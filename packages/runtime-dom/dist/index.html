@@ -8,18 +8,18 @@
   <body>
     <div id="app">111</div>
     <script type="module">
-      import // render,
+      // import // render,
       // h,
-      '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
-      import { render, h, Text } from './runtime-dom.js';
+      // '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
+      import { render, h, Text,Fragment } from './runtime-dom.js';
 
-      let ele1 = h(Text, '文本');
-      console.log('ele1: ', ele1);
+      let ele1 = h(Fragment,[h('div','div1'),h('div','div2')] );
+      let ele2 = h(Fragment,[h('div','div12'),h('div','div22')] );
 
       render(ele1, app);
 
       setTimeout(() => {
-        render(h(Text, '文本2222'), app);
+        render(ele2, app);
       }, 3000);
       setTimeout(() => {
         render(null, app);
