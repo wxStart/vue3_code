@@ -1,4 +1,4 @@
-import { ShapeFlags } from '@vue/shared';
+import { hasOwn, ShapeFlags } from '@vue/shared';
 import { Fragment, isSameVnode, Text } from './createVnode';
 import { getSequence } from './seq';
 import { reactive, ReactiveEffect } from '@vue/reactivity';
@@ -364,6 +364,7 @@ export function createRenderer(renderOptions) {
       props: {},
       attrs: {},
       propsOptions, // 组件中接受的pops
+      proxy: null,
     };
     // 元素更新  n2.el= n1.el
     // 组件更新 n2.component.subTree.el =  n1.component.subTree.el
@@ -371,14 +372,45 @@ export function createRenderer(renderOptions) {
 
     initProps(instance, vnode.props); // vnode.props 是组件的props  { pA: 'paaa', pB: 'pb' }
     console.log('看看attrs 和props 属性：instance ', instance);
+
+    const publicProperty = {
+      $attrs: (instance) => instance.attrs,
+    };
+
+    instance.proxy = new Proxy(instance, {
+      get(target, key) {
+        const { state, props } = target;
+        if (state && hasOwn(state, key)) {
+          return state[key];
+        } else if (props && hasOwn(props, key)) {
+          return props[key];
+        }
+        // 对于一些无法修改的属性  $sloots  $attr
+        const getters = publicProperty[key];
+        if (getters) {
+          return getters(target);
+        }
+      },
+      set(target, key, value) {
+        const { state, props } = target;
+        if (state && hasOwn(state, key)) {
+          state[key] = value;
+        } else if (props && hasOwn(props, key)) {
+          // props
+          console.warn('props 属性是只读的，不可进行修改');
+          return false;
+        }
+        return true;
+      },
+    });
     const componentUpdate = () => {
       if (!instance.isMounted) {
-        const subTree = render.call(state, state);
+        const subTree = render.call(instance.proxy, instance.proxy);
         patch(null, subTree, container, anchor);
         instance.subTree = subTree;
         instance.isMounted = true;
       } else {
-        const subTree = render.call(state, state);
+        const subTree = render.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container, anchor);
         instance.subTree = subTree;
       }

@@ -8,6 +8,8 @@ function isFunction(value) {
 function isString(value) {
   return typeof value == "string";
 }
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var hasOwn = (target, key) => hasOwnProperty.call(target, key);
 
 // packages/reactivity/src/effect.ts
 function effect(fn, options) {
@@ -753,20 +755,48 @@ function createRenderer(renderOptions2) {
       // 组件的更新函数
       props: {},
       attrs: {},
-      propsOptions
+      propsOptions,
       // 组件中接受的pops
+      proxy: null
     };
     vnode.component = instance;
     initProps(instance, vnode.props);
     console.log("\u770B\u770Battrs \u548Cprops \u5C5E\u6027\uFF1Ainstance ", instance);
+    const publicProperty = {
+      $attrs: (instance2) => instance2.attrs
+    };
+    instance.proxy = new Proxy(instance, {
+      get(target, key) {
+        const { state: state2, props } = target;
+        if (state2 && hasOwn(state2, key)) {
+          return state2[key];
+        } else if (props && hasOwn(props, key)) {
+          return props[key];
+        }
+        const getters = publicProperty[key];
+        if (getters) {
+          return getters(target);
+        }
+      },
+      set(target, key, value) {
+        const { state: state2, props } = target;
+        if (state2 && hasOwn(state2, key)) {
+          state2[key] = value;
+        } else if (props && hasOwn(props, key)) {
+          console.warn("props \u5C5E\u6027\u662F\u53EA\u8BFB\u7684\uFF0C\u4E0D\u53EF\u8FDB\u884C\u4FEE\u6539");
+          return false;
+        }
+        return true;
+      }
+    });
     const componentUpdate = () => {
       if (!instance.isMounted) {
-        const subTree = render3.call(state, state);
+        const subTree = render3.call(instance.proxy, instance.proxy);
         patch(null, subTree, container, anchor);
         instance.subTree = subTree;
         instance.isMounted = true;
       } else {
-        const subTree = render3.call(state, state);
+        const subTree = render3.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container, anchor);
         instance.subTree = subTree;
       }

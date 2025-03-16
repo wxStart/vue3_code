@@ -27,15 +27,18 @@
           setTimeout(() => {
             this.age++;
             this.age++;
+            this.pA ='1213'
           }, 1000);
           return h('div', [
             h('div', `name:${this.name}`),
             h('div', `age:${proxy.age}`),
+            h('div', `prosp:pA:${proxy.pA}`),
+            h('div', `$attr:attrB:${proxy.$attrs.attrB}`),
           ]);
         },
       };
 
-      render(h(VueComponent, { pA: 'paaa', pB: 'pb' }), app);
+      render(h(VueComponent, { pA: 'paaa', attrB: 'AttrB' }), app);
     </script>
   </body>
 </html>
