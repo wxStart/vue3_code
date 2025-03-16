@@ -15,29 +15,39 @@
       } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
       import { render, h, Text, Fragment } from './runtime-dom.js';
 
+      // 组件更新有三种方式(状态  属性  插槽)
+
+      const RenderComponent = {
+        props: {
+          address: String,
+        },
+        render(proxy) {
+          return  h(Text, proxy.address);
+        },
+      };
+
       const VueComponent = {
         props: {
           pA: String,
         },
         data() {
-          return { name: 'wx', age: 19 };
+          return { flag: true, address: '上海' };
         },
         render(proxy) {
-          console.log('render');
-          setTimeout(() => {
-            this.age++;
-            this.age++;
-            this.pA ='1213'
-          }, 1000);
-          return h('div', [
-            h('div', `name:${this.name}`),
-            h('div', `age:${proxy.age}`),
-            h('div', `prosp:pA:${proxy.pA}`),
-            h('div', `$attr:attrB:${proxy.$attrs.attrB}`),
+          return h(Fragment, [
+            h(
+              'button',
+              {
+                onClick: () => {
+                  this.flag = !this.flag;
+                },
+              },
+              '切换'
+            ),
+            h(RenderComponent, { address: this.flag ? '北京' : '上海' }),
           ]);
         },
       };
-
       render(h(VueComponent, { pA: 'paaa', attrB: 'AttrB' }), app);
     </script>
   </body>

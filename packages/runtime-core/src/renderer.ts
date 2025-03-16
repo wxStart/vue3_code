@@ -374,11 +374,47 @@ export function createRenderer(renderOptions) {
 
     console.log('看看attrs 和props 属性：instance ', instance);
   };
+
+  const hasPropsChange = (prevProps, nextProps) => {
+    let nextKeys = Object.keys(nextProps);
+    if (nextKeys.length !== Object.keys(prevProps).length) {
+      return true;
+    }
+
+    for (let index = 0; index < nextKeys.length; index++) {
+      const key = nextKeys[index];
+      if (nextProps[key] != prevProps[key]) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const updateProps = (instance, prevProps, nextProps) => {
+    // instance.props.address = 123; 这样更新 子组件也会更新
+    if (hasPropsChange(prevProps, nextProps)) {
+      for (const key in nextProps) {
+        instance.props[key] = nextProps[key];
+      }
+    }
+    for (const key in prevProps) {
+      if (!(key in nextProps)) {
+        delete instance.props[key];
+      }
+    }
+  };
+  const updateComponent = (n1, n2) => {
+    const instance = (n2.component = n1.component); // 复用组件实例
+    const { props: prevProps } = n1;
+    const { props: nextProps } = n2;
+    updateProps(instance, prevProps, nextProps);
+  };
+
   const processComponent = (n1, n2, continer, anchor) => {
     if (n1 == null) {
       mountComponent(n2, continer, anchor);
     } else {
       // 更新
+      updateComponent(n1, n2);
     }
   };
   const patch = (n1, n2, container, anchor = null) => {

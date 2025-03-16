@@ -1,7 +1,6 @@
 import { reactive } from '@vue/reactivity';
 import { hasOwn, isFunction } from '@vue/shared';
 
-
 // 创建组件实例
 export function createComponentInstance(vnode) {
   const instance = {
@@ -74,13 +73,12 @@ export function setuoComponent(instance) {
 
   // 赋值代理对象
   instance.proxy = new Proxy(instance, handle);
-  const { data,render } = vnode.type;
+  const { data, render } = vnode.type;
 
-  if (!isFunction(data)) {
+  if (isFunction(data)) {
+    instance.data = reactive(data.call(instance.proxy)); // data函数里面就可以访问 props
+  } else {
     console.warn(' data options 必须是一个函数 ');
   }
-
-  instance.data = reactive(data.call(instance.proxy)) // data函数里面就可以访问 props
-  instance.render = render
-
+  instance.render = render;
 }

@@ -590,10 +590,11 @@ function setuoComponent(instance) {
   initProps(instance, vnode.props);
   instance.proxy = new Proxy(instance, handle);
   const { data, render: render2 } = vnode.type;
-  if (!isFunction(data)) {
+  if (isFunction(data)) {
+    instance.data = reactive(data.call(instance.proxy));
+  } else {
     console.warn(" data options \u5FC5\u987B\u662F\u4E00\u4E2A\u51FD\u6570 ");
   }
-  instance.data = reactive(data.call(instance.proxy));
   instance.render = render2;
 }
 
@@ -825,10 +826,42 @@ function createRenderer(renderOptions2) {
     setupRenderEffect(instance, container, anchor);
     console.log("\u770B\u770Battrs \u548Cprops \u5C5E\u6027\uFF1Ainstance ", instance);
   };
+  const hasPropsChange = (prevProps, nextProps) => {
+    let nextKeys = Object.keys(nextProps);
+    if (nextKeys.length !== Object.keys(prevProps).length) {
+      return true;
+    }
+    for (let index = 0; index < nextKeys.length; index++) {
+      const key = nextKeys[index];
+      if (nextProps[key] != prevProps[key]) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const updateProps = (instance, prevProps, nextProps) => {
+    if (hasPropsChange(prevProps, nextProps)) {
+      for (const key in nextProps) {
+        instance.props[key] = nextProps[key];
+      }
+    }
+    for (const key in prevProps) {
+      if (!(key in nextProps)) {
+        delete instance.props[key];
+      }
+    }
+  };
+  const updateComponent = (n1, n2) => {
+    const instance = n2.component = n1.component;
+    const { props: prevProps } = n1;
+    const { props: nextProps } = n2;
+    updateProps(instance, prevProps, nextProps);
+  };
   const processComponent = (n1, n2, continer, anchor) => {
     if (n1 == null) {
       mountComponent(n2, continer, anchor);
     } else {
+      updateComponent(n1, n2);
     }
   };
   const patch = (n1, n2, container, anchor = null) => {
