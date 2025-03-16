@@ -16,11 +16,14 @@
       import { render, h, Text, Fragment } from './runtime-dom.js';
 
       const VueComponent = {
+        props: {
+          pA: String,
+        },
         data() {
           return { name: 'wx', age: 19 };
         },
         render(proxy) {
-          console.log('render')
+          console.log('render');
           setTimeout(() => {
             this.age++;
             this.age++;
@@ -32,7 +35,7 @@
         },
       };
 
-      render(h(VueComponent), app);
+      render(h(VueComponent, { pA: 'paaa', pB: 'pb' }), app);
     </script>
   </body>
 </html>

@@ -333,17 +333,44 @@ export function createRenderer(renderOptions) {
     patchChildren(n1, n2, el);
   };
 
-  const mountComponent = (n2, container, anchor) => {
+  const initProps = (instance, rawProps) => {
+    const props = {};
+    const attrs = {};
+
+    const { propsOptions = {} } = instance; // 组件实例里面定义接受的props
+    if (rawProps) {
+      for (const key in rawProps) {
+        const value = rawProps[key];
+        if (propsOptions[key]) {
+          props[key] = value;
+        } else {
+          attrs[key] = value;
+        }
+      }
+    }
+    instance.props = reactive(props);
+    instance.attrs = attrs;
+  };
+  const mountComponent = (vnode, container, anchor) => {
     //组件可以基于自己的状态重新渲染  effect
-    const { data = () => {}, render } = n2.type;
+    const { data = () => {}, render, props: propsOptions } = vnode.type;
     const state = reactive(data());
     const instance = {
       state, // 组件的状态
-      vnode: n2, // 组件的虚拟节点
+      vnode, // 组件的虚拟节点
       subTree: null, // 子树
       isMounted: false, // 是否挂载完成
       update: null, // 组件的更新函数
+      props: {},
+      attrs: {},
+      propsOptions, // 组件中接受的pops
     };
+    // 元素更新  n2.el= n1.el
+    // 组件更新 n2.component.subTree.el =  n1.component.subTree.el
+    vnode.component = instance;
+
+    initProps(instance, vnode.props); // vnode.props 是组件的props  { pA: 'paaa', pB: 'pb' }
+    console.log('看看attrs 和props 属性：instance ', instance);
     const componentUpdate = () => {
       if (!instance.isMounted) {
         const subTree = render.call(state, state);

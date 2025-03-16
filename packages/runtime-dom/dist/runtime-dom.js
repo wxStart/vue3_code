@@ -719,22 +719,46 @@ function createRenderer(renderOptions2) {
     patchProps(oldProps, newProps, el);
     patchChildren(n1, n2, el);
   };
-  const mountComponent = (n2, container, anchor) => {
+  const initProps = (instance, rawProps) => {
+    const props = {};
+    const attrs = {};
+    const { propsOptions = {} } = instance;
+    if (rawProps) {
+      for (const key in rawProps) {
+        const value = rawProps[key];
+        if (propsOptions[key]) {
+          props[key] = value;
+        } else {
+          attrs[key] = value;
+        }
+      }
+    }
+    instance.props = reactive(props);
+    instance.attrs = attrs;
+  };
+  const mountComponent = (vnode, container, anchor) => {
     const { data = () => {
-    }, render: render3 } = n2.type;
+    }, render: render3, props: propsOptions } = vnode.type;
     const state = reactive(data());
     const instance = {
       state,
       // 组件的状态
-      vnode: n2,
+      vnode,
       // 组件的虚拟节点
       subTree: null,
       // 子树
       isMounted: false,
       // 是否挂载完成
-      update: null
+      update: null,
       // 组件的更新函数
+      props: {},
+      attrs: {},
+      propsOptions
+      // 组件中接受的pops
     };
+    vnode.component = instance;
+    initProps(instance, vnode.props);
+    console.log("\u770B\u770Battrs \u548Cprops \u5C5E\u6027\uFF1Ainstance ", instance);
     const componentUpdate = () => {
       if (!instance.isMounted) {
         const subTree = render3.call(state, state);
