@@ -395,10 +395,10 @@ export function createRenderer(renderOptions) {
       for (const key in nextProps) {
         instance.props[key] = nextProps[key];
       }
-    }
-    for (const key in prevProps) {
-      if (!(key in nextProps)) {
-        delete instance.props[key];
+      for (const key in prevProps) {
+        if (!(key in nextProps)) {
+          delete instance.props[key];
+        }
       }
     }
   };
