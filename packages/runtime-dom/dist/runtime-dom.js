@@ -519,6 +519,84 @@ function queueJob(job) {
   }
 }
 
+// packages/runtime-core/src/component.ts
+function createComponentInstance(vnode) {
+  const instance = {
+    data: null,
+    // 组件的状态
+    vnode,
+    // 组件的虚拟节点
+    subTree: null,
+    // 子树
+    isMounted: false,
+    // 是否挂载完成
+    update: null,
+    // 组件的更新函数
+    props: {},
+    attrs: {},
+    propsOptions: vnode.type.props,
+    // 组件中接受的pops
+    proxy: null
+    // 代理原来的属性 方便用户取值
+  };
+  return instance;
+}
+var initProps = (instance, rawProps) => {
+  const props = {};
+  const attrs = {};
+  const { propsOptions = {} } = instance;
+  if (rawProps) {
+    for (const key in rawProps) {
+      const value = rawProps[key];
+      if (propsOptions[key]) {
+        props[key] = value;
+      } else {
+        attrs[key] = value;
+      }
+    }
+  }
+  instance.props = reactive(props);
+  instance.attrs = attrs;
+};
+var publicProperty = {
+  $attrs: (instance) => instance.attrs
+};
+var handle = {
+  get(target, key) {
+    const { data, props } = target;
+    if (data && hasOwn(data, key)) {
+      return data[key];
+    } else if (props && hasOwn(props, key)) {
+      return props[key];
+    }
+    const getters = publicProperty[key];
+    if (getters) {
+      return getters(target);
+    }
+  },
+  set(target, key, value) {
+    const { data, props } = target;
+    if (data && hasOwn(data, key)) {
+      data[key] = value;
+    } else if (props && hasOwn(props, key)) {
+      console.warn("props \u5C5E\u6027\u662F\u53EA\u8BFB\u7684\uFF0C\u4E0D\u53EF\u8FDB\u884C\u4FEE\u6539");
+      return false;
+    }
+    return true;
+  }
+};
+function setuoComponent(instance) {
+  const { vnode } = instance;
+  initProps(instance, vnode.props);
+  instance.proxy = new Proxy(instance, handle);
+  const { data, render: render2 } = vnode.type;
+  if (!isFunction(data)) {
+    console.warn(" data options \u5FC5\u987B\u662F\u4E00\u4E2A\u51FD\u6570 ");
+  }
+  instance.data = reactive(data.call(instance.proxy));
+  instance.render = render2;
+}
+
 // packages/runtime-core/src/renderer.ts
 function createRenderer(renderOptions2) {
   const {
@@ -721,74 +799,8 @@ function createRenderer(renderOptions2) {
     patchProps(oldProps, newProps, el);
     patchChildren(n1, n2, el);
   };
-  const initProps = (instance, rawProps) => {
-    const props = {};
-    const attrs = {};
-    const { propsOptions = {} } = instance;
-    if (rawProps) {
-      for (const key in rawProps) {
-        const value = rawProps[key];
-        if (propsOptions[key]) {
-          props[key] = value;
-        } else {
-          attrs[key] = value;
-        }
-      }
-    }
-    instance.props = reactive(props);
-    instance.attrs = attrs;
-  };
-  const mountComponent = (vnode, container, anchor) => {
-    const { data = () => {
-    }, render: render3, props: propsOptions } = vnode.type;
-    const state = reactive(data());
-    const instance = {
-      state,
-      // 组件的状态
-      vnode,
-      // 组件的虚拟节点
-      subTree: null,
-      // 子树
-      isMounted: false,
-      // 是否挂载完成
-      update: null,
-      // 组件的更新函数
-      props: {},
-      attrs: {},
-      propsOptions,
-      // 组件中接受的pops
-      proxy: null
-    };
-    vnode.component = instance;
-    initProps(instance, vnode.props);
-    console.log("\u770B\u770Battrs \u548Cprops \u5C5E\u6027\uFF1Ainstance ", instance);
-    const publicProperty = {
-      $attrs: (instance2) => instance2.attrs
-    };
-    instance.proxy = new Proxy(instance, {
-      get(target, key) {
-        const { state: state2, props } = target;
-        if (state2 && hasOwn(state2, key)) {
-          return state2[key];
-        } else if (props && hasOwn(props, key)) {
-          return props[key];
-        }
-        const getters = publicProperty[key];
-        if (getters) {
-          return getters(target);
-        }
-      },
-      set(target, key, value) {
-        const { state: state2, props } = target;
-        if (state2 && hasOwn(state2, key)) {
-          state2[key] = value;
-        } else if (props && hasOwn(props, key)) {
-          console.warn("props \u5C5E\u6027\u662F\u53EA\u8BFB\u7684\uFF0C\u4E0D\u53EF\u8FDB\u884C\u4FEE\u6539");
-          return false;
-        }
-        return true;
-      }
-    });
+  function setupRenderEffect(instance, container, anchor) {
+    const { render: render3 } = instance;
     const componentUpdate = () => {
       if (!instance.isMounted) {
         const subTree = render3.call(instance.proxy, instance.proxy);
@@ -806,6 +818,12 @@ function createRenderer(renderOptions2) {
     });
     const update = instance.update = () => effect2.run();
     update();
+  }
+  const mountComponent = (vnode, container, anchor) => {
+    const instance = vnode.component = createComponentInstance(vnode);
+    setuoComponent(instance);
+    setupRenderEffect(instance, container, anchor);
+    console.log("\u770B\u770Battrs \u548Cprops \u5C5E\u6027\uFF1Ainstance ", instance);
   };
   const processComponent = (n1, n2, continer, anchor) => {
     if (n1 == null) {

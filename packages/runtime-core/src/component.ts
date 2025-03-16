@@ -1,0 +1,86 @@
+import { reactive } from '@vue/reactivity';
+import { hasOwn, isFunction } from '@vue/shared';
+
+
+// 创建组件实例
+export function createComponentInstance(vnode) {
+  const instance = {
+    data: null, // 组件的状态
+    vnode, // 组件的虚拟节点
+    subTree: null, // 子树
+    isMounted: false, // 是否挂载完成
+    update: null, // 组件的更新函数
+    props: {},
+    attrs: {},
+    propsOptions: vnode.type.props, // 组件中接受的pops
+    proxy: null, // 代理原来的属性 方便用户取值
+  };
+  return instance;
+}
+
+const initProps = (instance, rawProps) => {
+  const props = {};
+  const attrs = {};
+
+  const { propsOptions = {} } = instance; // 组件实例里面定义接受的props
+  if (rawProps) {
+    for (const key in rawProps) {
+      const value = rawProps[key];
+      if (propsOptions[key]) {
+        props[key] = value;
+      } else {
+        attrs[key] = value;
+      }
+    }
+  }
+  instance.props = reactive(props);
+  instance.attrs = attrs;
+};
+
+const publicProperty = {
+  $attrs: (instance) => instance.attrs,
+};
+
+const handle = {
+  get(target, key) {
+    const { data, props } = target;
+    if (data && hasOwn(data, key)) {
+      return data[key];
+    } else if (props && hasOwn(props, key)) {
+      return props[key];
+    }
+    // 对于一些无法修改的属性  $sloots  $attr
+    const getters = publicProperty[key];
+    if (getters) {
+      return getters(target);
+    }
+  },
+  set(target, key, value) {
+    const { data, props } = target;
+    if (data && hasOwn(data, key)) {
+      data[key] = value;
+    } else if (props && hasOwn(props, key)) {
+      // props
+      console.warn('props 属性是只读的，不可进行修改');
+      return false;
+    }
+    return true;
+  },
+};
+// 给实例赋值
+export function setuoComponent(instance) {
+  const { vnode } = instance;
+  initProps(instance, vnode.props); // vnode.props 是组件的props  { pA: 'paaa', pB: 'pb' }
+
+  // 赋值代理对象
+  instance.proxy = new Proxy(instance, handle);
+  const { data,render } = vnode.type;
+
+  if (!isFunction(data)) {
+    console.warn(' data options 必须是一个函数 ');
+  }
+
+  instance.data = reactive(data.call(instance.proxy)) // data函数里面就可以访问 props
+  instance.render = render
+
+}

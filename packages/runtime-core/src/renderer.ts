@@ -3,6 +3,7 @@ import { Fragment, isSameVnode, Text } from './createVnode';
 import { getSequence } from './seq';
 import { reactive, ReactiveEffect } from '@vue/reactivity';
 import { queueJob } from './schedule';
+import { createComponentInstance, setuoComponent } from './component';
 
 export function createRenderer(renderOptions) {
   const {
@@ -333,76 +334,8 @@ export function createRenderer(renderOptions) {
     patchChildren(n1, n2, el);
   };
 
-  const initProps = (instance, rawProps) => {
-    const props = {};
-    const attrs = {};
-
-    const { propsOptions = {} } = instance; // 组件实例里面定义接受的props
-    if (rawProps) {
-      for (const key in rawProps) {
-        const value = rawProps[key];
-        if (propsOptions[key]) {
-          props[key] = value;
-        } else {
-          attrs[key] = value;
-        }
-      }
-    }
-    instance.props = reactive(props);
-    instance.attrs = attrs;
-  };
-  const mountComponent = (vnode, container, anchor) => {
-    //组件可以基于自己的状态重新渲染  effect
-    const { data = () => {}, render, props: propsOptions } = vnode.type;
-    const state = reactive(data());
-    const instance = {
-      state, // 组件的状态
-      vnode, // 组件的虚拟节点
-      subTree: null, // 子树
-      isMounted: false, // 是否挂载完成
-      update: null, // 组件的更新函数
-      props: {},
-      attrs: {},
-      propsOptions, // 组件中接受的pops
-      proxy: null,
-    };
-    // 元素更新  n2.el= n1.el
-    // 组件更新 n2.component.subTree.el =  n1.component.subTree.el
-    vnode.component = instance;
-
-    initProps(instance, vnode.props); // vnode.props 是组件的props  { pA: 'paaa', pB: 'pb' }
-    console.log('看看attrs 和props 属性：instance ', instance);
-
-    const publicProperty = {
-      $attrs: (instance) => instance.attrs,
-    };
-
-    instance.proxy = new Proxy(instance, {
-      get(target, key) {
-        const { state, props } = target;
-        if (state && hasOwn(state, key)) {
-          return state[key];
-        } else if (props && hasOwn(props, key)) {
-          return props[key];
-        }
-        // 对于一些无法修改的属性  $sloots  $attr
-        const getters = publicProperty[key];
-        if (getters) {
-          return getters(target);
-        }
-      },
-      set(target, key, value) {
-        const { state, props } = target;
-        if (state && hasOwn(state, key)) {
-          state[key] = value;
-        } else if (props && hasOwn(props, key)) {
-          // props
-          console.warn('props 属性是只读的，不可进行修改');
-          return false;
-        }
-        return true;
-      },
-    });
+  function setupRenderEffect(instance, container, anchor) {
+    const { render } = instance;
     const componentUpdate = () => {
       if (!instance.isMounted) {
         const subTree = render.call(instance.proxy, instance.proxy);
@@ -420,6 +353,26 @@ export function createRenderer(renderOptions) {
     });
     const update = (instance.update = () => effect.run());
     update();
+  }
+  const mountComponent = (vnode, container, anchor) => {
+    // 1. 创建组件实例
+    // 2. 实例属性赋值
+    // 3. 创建effect
+
+    //1. 创建组件实例
+    const instance = (vnode.component = createComponentInstance(vnode));
+
+    // 2 实例属性赋值
+    setuoComponent(instance);
+    //3.创建effect
+    setupRenderEffect(instance, container, anchor);
+
+    //组件可以基于自己的状态重新渲染  effect
+
+    // 元素更新  n2.el= n1.el
+    // 组件更新 n2.component.subTree.el =  n1.component.subTree.el
+
+    console.log('看看attrs 和props 属性：instance ', instance);
   };
   const processComponent = (n1, n2, continer, anchor) => {
     if (n1 == null) {
