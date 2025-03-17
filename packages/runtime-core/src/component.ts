@@ -105,8 +105,9 @@ export function setupComponent(instance) {
         }
       },
     };
+    setCurrentInstance(instance)
     const setupResult = setup(instance.props, setupContext);
-    debugger;
+    unsetCurrentInstance()
     if (isFunction(setupResult)) {
       instance.render = setupResult;
     } else {
@@ -123,3 +124,18 @@ export function setupComponent(instance) {
     instance.render = render;
   }
 }
+
+
+// 当前的实例   因为所以得组合式api都是写在setup里面的
+export let currentInstance = null;
+
+export const getCurrentInstance = () => {
+  return currentInstance;
+};
+
+export const setCurrentInstance = (instance) => {
+  currentInstance = instance;
+};
+export const unsetCurrentInstance = () => {
+  currentInstance = null;
+};

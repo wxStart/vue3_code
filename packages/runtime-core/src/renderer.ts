@@ -4,6 +4,7 @@ import { getSequence } from './seq';
 import { reactive, ReactiveEffect } from '@vue/reactivity';
 import { queueJob } from './schedule';
 import { createComponentInstance, setupComponent } from './component';
+import { invokeArray } from './apiLifecycle';
 
 export function createRenderer(renderOptions) {
   const {
@@ -338,26 +339,44 @@ export function createRenderer(renderOptions) {
     instance.next = null;
     instance.vnode = next;
     updateProps(instance, instance.props, next.props);
-    debugger
+    debugger;
   };
 
   function setupRenderEffect(instance, container, anchor) {
     const { render } = instance;
     const componentUpdate = () => {
       if (!instance.isMounted) {
+        const { bm, m } = instance;
+        if (bm) {
+          // 生命周期'BEFORE_MOUNT'
+          invokeArray(bm);
+        }
+
         const subTree = render.call(instance.proxy, instance.proxy);
         patch(null, subTree, container, anchor);
         instance.subTree = subTree;
         instance.isMounted = true;
+        if (m) {
+          // 生命周期'MOUNTED'
+          invokeArray(m);
+        }
       } else {
         debugger;
-        const { next } = instance; // props变化和插槽才会设置上这个竖向
+        const { next,bu,u } = instance; // props变化和插槽才会设置上这个竖向
         if (next) {
           updateComponentPreRender(instance, next); // 更新实例的props
+        }
+        if (bu) {
+          // 生命周期'BEFORE_UPDATE'
+          invokeArray(bu);
         }
         const subTree = render.call(instance.proxy, instance.proxy);
         patch(instance.subTree, subTree, container, anchor);
         instance.subTree = subTree;
+        if (u) {
+          // 生命周期'UPDATED'
+          invokeArray(u);
+        }
       }
     };
     const effect = new ReactiveEffect(componentUpdate, () => {
@@ -471,15 +490,14 @@ export function createRenderer(renderOptions) {
   };
 
   const unmount = (vnode) => {
-    const {shapeFlag} =vnode
+    const { shapeFlag } = vnode;
     if (vnode.type === Fragment) {
       // Fragment是直接卸载子节点
       unmountChildren(vnode.children);
-    } else if(shapeFlag & ShapeFlags.COMPONENT){
+    } else if (shapeFlag & ShapeFlags.COMPONENT) {
       // 组件卸载
-      unmount(vnode.component.subTree)
-    }
-    else  {
+      unmount(vnode.component.subTree);
+    } else {
       hostRemove(vnode.el);
     }
   };

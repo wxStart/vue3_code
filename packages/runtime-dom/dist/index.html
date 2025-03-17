@@ -8,81 +8,92 @@
   <body>
     <div id="app">111</div>
     <script type="module">
+      // import {
+      //   render,
+      //   h,
+      //   ref,
+      //   Text,
+      //   Fragment,
+      //   onBeforeMount,
+      //   onMounted,
+      //   onBeforeUpdate,
+      //   onUpdated,
+      //   getCurrentInstance,
+      // } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
+
       import {
-        // render, //
-        // h,
-        // ref,
-        // Text,
-        // reactive,
-        onMounted,
-      } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
-      import {
-        render, //
+        render,
         h,
         ref,
         Text,
         Fragment,
+        onBeforeMount,
+        onMounted,
+        onBeforeUpdate,
+        onUpdated,
+        getCurrentInstance,
       } from './runtime-dom.js';
 
       // 组件更新有三种方式(状态  属性  插槽)
 
-      const RenderCom = {
+      const ChildCom = {
         // render(proxy){
         //   return h('div',[
         //     proxy.$slots.footer('aff'),
         //     proxy.$slots.header('头部渲染位置放到下面')
         //   ])
         // }
-        setup(props, { emit, attrs, expose, slots }) {
-          console.log('emit, attrs: ', emit, attrs);
-          console.log('slots: 1111', slots, attrs);
-          return (proxy) =>
-            h('div', [
-              slots.footer('aff'),
-              slots.header('头部渲染位置放到下面'),
-            ]);
+        props: {
+          red: String,
+        },
+        setup(props) {
+          console.log(' ChildCom  getCurrentInstance(): ', getCurrentInstance());
+          onBeforeMount(() => {
+            console.log('ChildCom onBeforeMount');
+          });
+          onMounted(() => {
+            console.log('ChildCom onBeforeMount');
+          });
+          onBeforeUpdate(() => {
+            console.log('ChildCom onBeforeUpdate');
+          });
+          onUpdated(() => {
+            console.log('ChildCom onUpdated');
+          });
+          return (proxy) => h('div', '生命周期' + props.red);
         },
       };
 
-      const VueComponent = {
-        data() {
-          return { flag: true, address: '上海' };
-        },
-        setup(props, { emit, attrs, expose, slots }) {
-          expose({
-            a: 1,
-          }); //   defineExpose这个红函数就是调用的expose
+      const ParentComponent = {
+        setup() {
+          const red = ref('123');
+          setTimeout(() => {
+            red.value = '456';
+          }, 1000);
+          console.log('   getCurrentInstance(): ', getCurrentInstance());
+          onBeforeMount(() => {
+            console.log('parent onBeforeMount');
+          });
+          onMounted(() => {
+            console.log(
+              '  onMounted getCurrentInstance(): ',
+              getCurrentInstance()
+            );
+            console.log('parent onBeforeMount');
+          });
+          onBeforeUpdate(() => {
+            console.log('parent onBeforeUpdate');
+          });
+          onUpdated(() => {
+            console.log('parent onUpdated');
+          });
           return () =>
-            h('div', [
-              h(
-                'button',
-                {
-                  onClick: () => {
-                    emit('myEmit', 1000);
-                  },
-                },
-                '点一下我自定义事件'
-              ),
-              h(RenderCom, null, {
-                header: (t) => h('header', '自定义的header' + t),
-                footer: (t) => h('footer', '自定义的footer' + t),
-              }),
-            ]);
+            h(ChildCom, {
+              red: red.value,
+            });
         },
       };
-      render(
-        h(VueComponent, {
-          onMyEmit: (val) => {
-            //自定义事件  @myEmit 会被解析为 onMyEmit
-            alert(`这里传递的值${val}`);
-          },
-        }),
-        app
-      );
-
-      setTimeout(() => {
-        render(null, app);
-      }, 3000);
+      render(h(ParentComponent), app);
     </script>
   </body>
 </html>
