@@ -951,8 +951,11 @@ function createRenderer(renderOptions2) {
     }
   };
   const unmount = (vnode) => {
+    const { shapeFlag } = vnode;
     if (vnode.type === Fragment) {
       unmountChildren(vnode.children);
+    } else if (shapeFlag & 6 /* COMPONENT */) {
+      unmount(vnode.component.subTree);
     } else {
       hostRemove(vnode.el);
     }

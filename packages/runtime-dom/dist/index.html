@@ -51,7 +51,7 @@
         setup(props, { emit, attrs, expose, slots }) {
           expose({
             a: 1,
-          });//   defineExpose这个红函数就是调用的expose
+          }); //   defineExpose这个红函数就是调用的expose
           return () =>
             h('div', [
               h(
@@ -79,6 +79,10 @@
         }),
         app
       );
+
+      setTimeout(() => {
+        render(null, app);
+      }, 3000);
     </script>
   </body>
 </html>

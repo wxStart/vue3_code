@@ -471,10 +471,15 @@ export function createRenderer(renderOptions) {
   };
 
   const unmount = (vnode) => {
+    const {shapeFlag} =vnode
     if (vnode.type === Fragment) {
       // Fragment是直接卸载子节点
       unmountChildren(vnode.children);
-    } else {
+    } else if(shapeFlag & ShapeFlags.COMPONENT){
+      // 组件卸载
+      unmount(vnode.component.subTree)
+    }
+    else  {
       hostRemove(vnode.el);
     }
   };
