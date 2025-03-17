@@ -49,6 +49,9 @@
           return { flag: true, address: '上海' };
         },
         setup(props, { emit, attrs, expose, slots }) {
+          expose({
+            a: 1,
+          });//   defineExpose这个红函数就是调用的expose
           return () =>
             h('div', [
               h(

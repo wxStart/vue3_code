@@ -14,6 +14,7 @@ export function createComponentInstance(vnode) {
     slots: {}, // 插槽
     propsOptions: vnode.type.props, // 组件中接受的pops
     proxy: null, // 代理原来的属性 方便用户取值
+    exposed: null,
   };
   return instance;
 }
@@ -93,6 +94,9 @@ export function setupComponent(instance) {
       // .. 四个参数
       slots: instance.slots,
       attrs: instance.attrs,
+      expose(value) {
+        instance.exposed = value;
+      },
       emit(event: string, ...payload) {
         const eventName = `on${event[0].toLocaleUpperCase() + event.slice(1)}`;
         const handler = instance.vnode.props[eventName];
@@ -102,6 +106,7 @@ export function setupComponent(instance) {
       },
     };
     const setupResult = setup(instance.props, setupContext);
+    debugger;
     if (isFunction(setupResult)) {
       instance.render = setupResult;
     } else {
