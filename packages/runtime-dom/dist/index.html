@@ -26,28 +26,56 @@
 
       // 组件更新有三种方式(状态  属性  插槽)
 
-      const RenderCom ={
-        render(proxy){
-          return h('div',[
-            proxy.$slots.footer('aff'),
-            proxy.$slots.header('头部渲染位置放到下面')
-          ])
-        }
-      }
+      const RenderCom = {
+        // render(proxy){
+        //   return h('div',[
+        //     proxy.$slots.footer('aff'),
+        //     proxy.$slots.header('头部渲染位置放到下面')
+        //   ])
+        // }
+        setup(props, { emit, attrs, expose, slots }) {
+          console.log('emit, attrs: ', emit, attrs);
+          console.log('slots: 1111', slots, attrs);
+          return (proxy) =>
+            h('div', [
+              slots.footer('aff'),
+              slots.header('头部渲染位置放到下面'),
+            ]);
+        },
+      };
 
       const VueComponent = {
         data() {
           return { flag: true, address: '上海' };
         },
         setup(props, { emit, attrs, expose, slots }) {
-          return () => h(RenderCom, null,{
-            header:(t)=>h('header','自定义的header'+t),
-            footer:(t)=>h('footer','自定义的footer'+t)
-          });
+          return () =>
+            h('div', [
+              h(
+                'button',
+                {
+                  onClick: () => {
+                    emit('myEmit', 1000);
+                  },
+                },
+                '点一下我自定义事件'
+              ),
+              h(RenderCom, null, {
+                header: (t) => h('header', '自定义的header' + t),
+                footer: (t) => h('footer', '自定义的footer' + t),
+              }),
+            ]);
         },
-       
       };
-      render(h(VueComponent), app);
+      render(
+        h(VueComponent, {
+          onMyEmit: (val) => {
+            //自定义事件  @myEmit 会被解析为 onMyEmit
+            alert(`这里传递的值${val}`);
+          },
+        }),
+        app
+      );
     </script>
   </body>
 </html>

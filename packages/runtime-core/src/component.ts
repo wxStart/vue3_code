@@ -91,9 +91,17 @@ export function setupComponent(instance) {
   if (setup) {
     const setupContext = {
       // .. 四个参数
+      slots: instance.slots,
+      attrs: instance.attrs,
+      emit(event: string, ...payload) {
+        const eventName = `on${event[0].toLocaleUpperCase() + event.slice(1)}`;
+        const handler = instance.vnode.props[eventName];
+        if (handler) {
+          handler(...payload);
+        }
+      },
     };
     const setupResult = setup(instance.props, setupContext);
-    console.log('setupResult: ', setupResult);
     if (isFunction(setupResult)) {
       instance.render = setupResult;
     } else {
