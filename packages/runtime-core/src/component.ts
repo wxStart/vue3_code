@@ -1,4 +1,4 @@
-import { reactive } from '@vue/reactivity';
+import { reactive, proxyRefs } from '@vue/reactivity';
 import { hasOwn, isFunction } from '@vue/shared';
 
 // 创建组件实例
@@ -42,11 +42,13 @@ const publicProperty = {
 
 const handle = {
   get(target, key) {
-    const { data, props } = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       return data[key];
     } else if (props && hasOwn(props, key)) {
       return props[key];
+    } else if (setupState && hasOwn(setupState, key)) {
+      return setupState[key];
     }
     // 对于一些无法修改的属性  $sloots  $attr
     const getters = publicProperty[key];
@@ -55,30 +57,47 @@ const handle = {
     }
   },
   set(target, key, value) {
-    const { data, props } = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       data[key] = value;
     } else if (props && hasOwn(props, key)) {
       // props
       console.warn('props 属性是只读的，不可进行修改');
       return false;
+    } else if (setupState && hasOwn(setupState, key)) {
+      setupState[key] = value;
     }
     return true;
   },
 };
 // 给实例赋值
-export function setuoComponent(instance) {
+export function setupComponent(instance) {
   const { vnode } = instance;
   initProps(instance, vnode.props); // vnode.props 是组件的props  { pA: 'paaa', pB: 'pb' }
 
   // 赋值代理对象
   instance.proxy = new Proxy(instance, handle);
-  const { data, render } = vnode.type;
+  const { data, render, setup } = vnode.type;
+
+  if (setup) {
+    const setupContext = {
+      // .. 四个参数
+    };
+    const setupResult = setup(instance.props, setupContext);
+    console.log('setupResult: ', setupResult);
+    if (isFunction(setupResult)) {
+      instance.render = setupResult;
+    } else {
+      instance.setupState = proxyRefs(setupResult); // render 函数里面方位setup里面的ref值时候不需要访问.vlaue
+    }
+  }
 
   if (isFunction(data)) {
     instance.data = reactive(data.call(instance.proxy)); // data函数里面就可以访问 props
   } else {
     console.warn(' data options 必须是一个函数 ');
   }
-  instance.render = render;
+  if (!instance.render) {
+    instance.render = render;
+  }
 }

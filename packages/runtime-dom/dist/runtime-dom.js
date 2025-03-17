@@ -563,11 +563,13 @@ var publicProperty = {
 };
 var handle = {
   get(target, key) {
-    const { data, props } = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       return data[key];
     } else if (props && hasOwn(props, key)) {
       return props[key];
+    } else if (setupState && hasOwn(setupState, key)) {
+      return setupState[key];
     }
     const getters = publicProperty[key];
     if (getters) {
@@ -575,27 +577,43 @@ var handle = {
     }
   },
   set(target, key, value) {
-    const { data, props } = target;
+    const { data, props, setupState } = target;
     if (data && hasOwn(data, key)) {
       data[key] = value;
     } else if (props && hasOwn(props, key)) {
       console.warn("props \u5C5E\u6027\u662F\u53EA\u8BFB\u7684\uFF0C\u4E0D\u53EF\u8FDB\u884C\u4FEE\u6539");
       return false;
+    } else if (setupState && hasOwn(setupState, key)) {
+      setupState[key] = value;
     }
     return true;
   }
 };
-function setuoComponent(instance) {
+function setupComponent(instance) {
   const { vnode } = instance;
   initProps(instance, vnode.props);
   instance.proxy = new Proxy(instance, handle);
-  const { data, render: render2 } = vnode.type;
+  const { data, render: render2, setup } = vnode.type;
+  if (setup) {
+    const setupContext = {
+      // .. 四个参数
+    };
+    const setupResult = setup(instance.props, setupContext);
+    console.log("setupResult: ", setupResult);
+    if (isFunction(setupResult)) {
+      instance.render = setupResult;
+    } else {
+      instance.setupState = proxyRefs(setupResult);
+    }
+  }
   if (isFunction(data)) {
     instance.data = reactive(data.call(instance.proxy));
   } else {
     console.warn(" data options \u5FC5\u987B\u662F\u4E00\u4E2A\u51FD\u6570 ");
   }
-  instance.render = render2;
+  if (!instance.render) {
+    instance.render = render2;
+  }
 }
 
 // packages/runtime-core/src/renderer.ts
@@ -833,7 +851,7 @@ function createRenderer(renderOptions2) {
   }
   const mountComponent = (vnode, container, anchor) => {
     const instance = vnode.component = createComponentInstance(vnode);
-    setuoComponent(instance);
+    setupComponent(instance);
     setupRenderEffect(instance, container, anchor);
     console.log("\u770B\u770Battrs \u548Cprops \u5C5E\u6027\uFF1Ainstance ", instance);
   };
