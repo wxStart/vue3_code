@@ -9,11 +9,12 @@
     <div id="app">111</div>
     <script type="module">
       import {
+        // render, //
         // h,
-        // render,
         // ref,
-
-        reactive,
+        // Text,
+        // reactive,
+        onMounted,
       } from '/node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js';
       import {
         render, //
@@ -25,26 +26,26 @@
 
       // 组件更新有三种方式(状态  属性  插槽)
 
+      const RenderCom ={
+        render(proxy){
+          return h('div',[
+            proxy.$slots.footer('aff'),
+            proxy.$slots.header('头部渲染位置放到下面')
+          ])
+        }
+      }
+
       const VueComponent = {
         data() {
           return { flag: true, address: '上海' };
         },
         setup(props, { emit, attrs, expose, slots }) {
-          console.log('abc: ', abc);
-          console.log('props: ', props);
-          let a = ref(1);
-          setTimeout(() => {
-            a.value = 2;
-          }, 1000);
-
-          return {
-            a,
-          };
-          // return () => h('div', '1234');
+          return () => h(RenderCom, null,{
+            header:(t)=>h('header','自定义的header'+t),
+            footer:(t)=>h('footer','自定义的footer'+t)
+          });
         },
-        render(proxy) {
-          return h('div', proxy.a);
-        },
+       
       };
       render(h(VueComponent), app);
     </script>
