@@ -2,7 +2,8 @@ import { reactive, proxyRefs } from '@vue/reactivity';
 import { hasOwn, isFunction, ShapeFlags } from '@vue/shared';
 
 // 创建组件实例
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
+  debugger
   const instance = {
     data: null, // 组件的状态
     vnode, // 组件的虚拟节点
@@ -15,6 +16,8 @@ export function createComponentInstance(vnode) {
     propsOptions: vnode.type.props, // 组件中接受的pops
     proxy: null, // 代理原来的属性 方便用户取值
     exposed: null,
+    parent,
+    provides: parent ? parent.provides : Object.create(null),
   };
   return instance;
 }
@@ -105,9 +108,9 @@ export function setupComponent(instance) {
         }
       },
     };
-    setCurrentInstance(instance)
+    setCurrentInstance(instance);
     const setupResult = setup(instance.props, setupContext);
-    unsetCurrentInstance()
+    unsetCurrentInstance();
     if (isFunction(setupResult)) {
       instance.render = setupResult;
     } else {
@@ -124,7 +127,6 @@ export function setupComponent(instance) {
     instance.render = render;
   }
 }
-
 
 // 当前的实例   因为所以得组合式api都是写在setup里面的
 export let currentInstance = null;
