@@ -24,8 +24,7 @@ export function createRenderer(renderOptions) {
     patchProp: hostPatchProp,
   } = renderOptions;
 
-
-  const  normalize =(children)=>{
+  const normalize = (children) => {
     for (let index = 0; index < children.length; index++) {
       // 暂时不考虑孩子是文本  这里只是html标签
       let child = children[index];
@@ -33,10 +32,10 @@ export function createRenderer(renderOptions) {
         child = children[index] = createVnode(Text, null, String(child));
       }
     }
-    return children
-  }
+    return children;
+  };
   const mountChildren = (children, container, parentComponet) => {
-    normalize(children)
+    normalize(children);
     for (let index = 0; index < children.length; index++) {
       // 暂时不考虑孩子是文本  这里只是html标签
       patch(null, children[index], container, parentComponet);
@@ -88,8 +87,9 @@ export function createRenderer(renderOptions) {
       const textel = (n2.el = hostCreateText(n2.children));
       hostInsert(textel, container);
     } else {
+      const el = (n2.el = n1.el); // 有个bug 文本节点不一样 el要复用的  normalize 产生的节点没有el了
       if (n1.children !== n2.children) {
-        const el = (n2.el = n1.el);
+        // const el = (n2.el = n1.el);
         // hostSetText(el, n2.children);
         hostSetElementText(el, n2.children);
       }
@@ -294,7 +294,7 @@ export function createRenderer(renderOptions) {
     */
 
     let c1 = n1.children;
-    let c2 = normalize( n2.children);
+    let c2 = normalize(n2.children);
     let prevShapeFlag = n1.shapeFlag;
     let shapeFlag = n2.shapeFlag;
 
@@ -356,7 +356,6 @@ export function createRenderer(renderOptions) {
     instance.next = null;
     instance.vnode = next;
     updateProps(instance, instance.props, next.props);
-    debugger;
   };
 
   function setupRenderEffect(instance, container, anchor) {
@@ -378,7 +377,6 @@ export function createRenderer(renderOptions) {
           invokeArray(m);
         }
       } else {
-        debugger;
         const { next, bu, u } = instance; // props变化和插槽才会设置上这个竖向
         if (next) {
           updateComponentPreRender(instance, next); // 更新实例的props
@@ -461,7 +459,6 @@ export function createRenderer(renderOptions) {
 
     if (prevProps === nextProps) return false;
 
-    debugger;
     // 看看props有没有变化
     return hasPropsChange(prevProps, nextProps);
   };
@@ -493,6 +490,7 @@ export function createRenderer(renderOptions) {
       n1 = null; // 这样就是直接走下面 mountElement 直接初次渲染n2
     }
     const { type, shapeFlag } = n2;
+
     switch (type) {
       case Text:
         processText(n1, n2, container);
@@ -503,6 +501,18 @@ export function createRenderer(renderOptions) {
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
           processElement(n1, n2, container, anchor, parentComponet);
+        } else if (shapeFlag & ShapeFlags.TELEPORT) {
+          type.process(n1, n2, container, anchor, parentComponet, {
+            mountChildren,
+            patchChildren,
+            move(vnode, container, anchor) {
+              hostInsert(
+                vnode.component ? vnode.component.subTree.el : vnode.el,
+                container,
+                anchor
+              );
+            },
+          });
         } else if (shapeFlag & ShapeFlags.COMPONENT) {
           processComponent(n1, n2, container, anchor, parentComponet);
         }
@@ -517,6 +527,9 @@ export function createRenderer(renderOptions) {
     } else if (shapeFlag & ShapeFlags.COMPONENT) {
       // 组件卸载
       unmount(vnode.component.subTree);
+    } else if (shapeFlag & ShapeFlags.TELEPORT) {
+      // 组件卸载
+      vnode.type.remove(vnode, unmountChildren);
     } else {
       hostRemove(vnode.el);
     }

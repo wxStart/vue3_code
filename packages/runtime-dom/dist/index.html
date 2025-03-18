@@ -7,6 +7,8 @@
   </head>
   <body>
     <div id="app">111</div>
+    <div id="root"></div>
+    <div id="root1"></div>
     <script type="module">
       import // render,
       // h,
@@ -35,50 +37,20 @@
         getCurrentInstance,
         provide,
         inject,
+        Teleport,
       } from './runtime-dom.js';
+      console.log('Teleport: ', Teleport);
 
-      // 组件更新有三种方式(状态  属性  插槽)
+      render(h(Teleport, { to: '#root' }, [23, 'dsadsa']), app);
 
-      const P3 = {
-        P: 'p3',
-        // render(proxy){
-        //   return h('div',[
-        //     proxy.$slots.footer('aff'),
-        //     proxy.$slots.header('头部渲染位置放到下面')
-        //   ])
-        // }
+      // # 只考虑的是数组的情况 不要测试其他东西
 
-        setup(props) {
-          const test = inject('test');
-          const test1 = inject('test1', 'test1的默认值');
-          return (proxy) => h('div', ['provide+ inject:' + test.value, test1]);
-        },
-      };
-
-      const P2 = {
-        P: 'p2',
-        setup() {
-          return () => h(P3);
-        },
-      };
-
-      const P1 = {
-        P: 'p1',
-        setup() {
-          const test = ref('test 的值');
-
-          setTimeout(() => {
-            test.value = 'test 值改变了';
-            console.log(' test.value : ',  test.value );
-          }, 2000);
-          provide('test', test);
-
-          return () => h(P2);
-        },
-      };
-      render(h(P1), app);
-      // 将  p1的provide 给p2
-      // 将  p2的provide 给p3  等等一直给后续孩子
+      setTimeout(() => {
+        render(h(Teleport, { to: '#root1' }, [1213, '2323']), app);
+        setTimeout(() => {
+          render(null, app);
+        }, 3000);
+      }, 3000);
     </script>
   </body>
 </html>

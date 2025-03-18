@@ -5,3 +5,4 @@ export * from '@vue/reactivity';
 export * from './component';
 export * from './apiLifecycle';
 export * from './apiProvide'
+export * from './Teleport'

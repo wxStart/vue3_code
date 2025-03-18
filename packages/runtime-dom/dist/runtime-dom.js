@@ -396,6 +396,36 @@ function doWatch(source, cb, { deep, immediate }) {
   console.log("oldValue: 111", oldValue);
 }
 
+// packages/runtime-core/src/Teleport.ts
+var Teleport = {
+  __isTeleport: true,
+  process(n1, n2, container, anchor, parentComponet, internals) {
+    let { mountChildren, patchChildren, move } = internals;
+    if (!n1) {
+      const target = n2.target = document.querySelector(n2.props.to);
+      if (target) {
+        mountChildren(n2.children, target, parentComponet);
+      }
+    } else {
+      console.log("n2.target: ", n2.target);
+      patchChildren(n1, n2, n1.target, parentComponet);
+      if (n2.props.to !== n1.props.to) {
+        const nextTarget = n2.target = document.querySelector(n2.props.to);
+        n2.children.forEach((child) => {
+          move(child, nextTarget, anchor);
+        });
+      }
+    }
+  },
+  remove(vnode, unmountChildren) {
+    const { shapeFlag, children } = vnode;
+    if (shapeFlag & 16 /* ARRAY_CHILDREN */) {
+      unmountChildren(children);
+    }
+  }
+};
+var isTeleport = (value) => value.__isTeleport;
+
 // packages/runtime-core/src/createVnode.ts
 var Text = Symbol("Text");
 var Fragment = Symbol("Fragment");
@@ -406,7 +436,7 @@ function isSameVnode(n1, n2) {
   return n1.type === n2.type && n1.key === n2.key;
 }
 function createVnode(type, props, children) {
-  const shapeFlag = isString(type) ? 1 /* ELEMENT */ : isObject(type) ? 4 /* STATEFUL_COMPONENT */ : 0;
+  const shapeFlag = isString(type) ? 1 /* ELEMENT */ : isTeleport(type) ? 64 /* TELEPORT */ : isObject(type) ? 4 /* STATEFUL_COMPONENT */ : 0;
   const vnode = {
     __v_isVnode: true,
     type,
@@ -741,8 +771,8 @@ function createRenderer(renderOptions2) {
       const textel = n2.el = hostCreateText(n2.children);
       hostInsert(textel, container);
     } else {
+      const el = n2.el = n1.el;
       if (n1.children !== n2.children) {
-        const el = n2.el = n1.el;
         hostSetElementText(el, n2.children);
       }
     }
@@ -901,7 +931,6 @@ function createRenderer(renderOptions2) {
     instance.next = null;
     instance.vnode = next;
     updateProps(instance, instance.props, next.props);
-    debugger;
   };
   function setupRenderEffect(instance, container, anchor) {
     const { render: render3 } = instance;
@@ -919,7 +948,6 @@ function createRenderer(renderOptions2) {
           invokeArray(m);
         }
       } else {
-        debugger;
         const { next, bu, u } = instance;
         if (next) {
           updateComponentPreRender(instance, next);
@@ -980,7 +1008,6 @@ function createRenderer(renderOptions2) {
     const { props: nextProps, children: nextChildren } = n2;
     if (prevChildren || nextChildren) return true;
     if (prevProps === nextProps) return false;
-    debugger;
     return hasPropsChange(prevProps, nextProps);
   };
   const updateComponent = (n1, n2) => {
@@ -1016,6 +1043,18 @@ function createRenderer(renderOptions2) {
       default:
         if (shapeFlag & 1 /* ELEMENT */) {
           processElement(n1, n2, container, anchor, parentComponet);
+        } else if (shapeFlag & 64 /* TELEPORT */) {
+          type.process(n1, n2, container, anchor, parentComponet, {
+            mountChildren,
+            patchChildren,
+            move(vnode, container2, anchor2) {
+              hostInsert(
+                vnode.component ? vnode.component.subTree.el : vnode.el,
+                container2,
+                anchor2
+              );
+            }
+          });
         } else if (shapeFlag & 6 /* COMPONENT */) {
           processComponent(n1, n2, container, anchor, parentComponet);
         }
@@ -1027,6 +1066,8 @@ function createRenderer(renderOptions2) {
       unmountChildren(vnode.children);
     } else if (shapeFlag & 6 /* COMPONENT */) {
       unmount(vnode.component.subTree);
+    } else if (shapeFlag & 64 /* TELEPORT */) {
+      vnode.type.remove(vnode, unmountChildren);
     } else {
       hostRemove(vnode.el);
     }
@@ -1169,6 +1210,7 @@ export {
   Fragment,
   LifeCytcle,
   ReactiveEffect,
+  Teleport,
   Text,
   activeEffet,
   computed,
@@ -1184,6 +1226,7 @@ export {
   isReactive,
   isRef,
   isSameVnode,
+  isTeleport,
   isVnode,
   onBeforeMount,
   onBeforeUpdate,
