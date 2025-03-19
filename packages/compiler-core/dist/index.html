@@ -10,7 +10,13 @@
     <script type="module">
       import { compile, parse } from './compiler-core.js';
 
-      console.log(' pars: ', parse('sdad {{ name}}'));
+      let template = `s
+      
+      
+      
+      dad <a></a> {{ name}}`;
+      console.log(' template.length: ', template.length);
+      console.log(' pars: ', template.length, parse(template));
     </script>
   </body>
 </html>

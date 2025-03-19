@@ -12,13 +12,43 @@ function createParserContext(content) {
 function isEnd(context) {
   return !context.source;
 }
-function advanceBy(context, n) {
-  context.source = context.source.slice(n);
+function advancePositionWithMutation(context, source, endIndex) {
+  let linesCount = 0;
+  let linePos = -1;
+  for (let i = 0; i < endIndex; i++) {
+    if (source.charCodeAt(i) == 10) {
+      linesCount++;
+      linePos = i;
+      console.log("linePost: ", linePos);
+    }
+  }
+  context.line += linesCount;
+  context.offest += endIndex;
+  context.column = linePos == -1 ? context.column + endIndex : endIndex - linePos;
+}
+function advanceBy(context, endIndex) {
+  let source = context.source;
+  advancePositionWithMutation(context, source, endIndex);
+  context.source = source.slice(endIndex);
 }
 function parseTextData(context, endIndex) {
   const contnet = context.source.slice(0, endIndex);
   advanceBy(context, endIndex);
   return contnet;
+}
+function getCursor(context) {
+  const { line, column, offest } = context;
+  return { line, column, offest };
+}
+function getSelection(context, start, end) {
+  end = end || getCursor(context);
+  console.log("end.offset: ", end.offest);
+  console.log("start.offest: ", start.offest);
+  return {
+    start,
+    end,
+    source: context.originalSource.slice(start.offest, end.offest)
+  };
 }
 function parseText(context) {
   let tonkens = ["<", "{{"];
@@ -29,11 +59,12 @@ function parseText(context) {
       endIndex = index;
     }
   }
+  let start = getCursor(context);
   let contnet = parseTextData(context, endIndex);
-  console.log("contnet: ", contnet);
   return {
     type: 2 /* TEXT */,
-    contnet
+    contnet,
+    loc: getSelection(context, start)
   };
 }
 function parserChildren(context) {
@@ -45,6 +76,7 @@ function parserChildren(context) {
     } else if (c[0] == "<") {
     } else {
       node = parseText(context);
+      console.log("node: ", node);
       debugger;
     }
     nodes.push(node);
