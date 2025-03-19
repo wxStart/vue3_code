@@ -106,7 +106,7 @@ function advanceBySpaces(context) {
 }
 function parseTag(context) {
   const start = getCursor(context);
-  const match = /^<\/?([a-z][^\t\r\n/>]*)/.exec(context.source);
+  const match = /^<\/?([a-z][^ \t\r\n/>]*)/.exec(context.source);
   console.log("match: ", match);
   const tag = match[1].trim();
   advanceBy(context, match[0].length);
