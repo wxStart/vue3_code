@@ -218,16 +218,18 @@ function parserChildren(context) {
   }
   return nodes.filter(Boolean);
 }
-function createRoot(children) {
+function createRoot(children, loc) {
   return {
     type: 0 /* ROOT */,
-    children
+    children,
+    loc
   };
 }
 function parse(template) {
   const context = createParserContext(template);
+  const start = getCursor(context);
   const children = parserChildren(context);
-  return createRoot(children);
+  return createRoot(children, getSelection(context, start));
 }
 
 // packages/compiler-core/src/index.ts

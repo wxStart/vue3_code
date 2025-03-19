@@ -280,10 +280,11 @@ function parserChildren(context) {
   return nodes.filter(Boolean);
 }
 
-function createRoot(children) {
+function createRoot(children, loc) {
   return {
     type: NodeTypes.ROOT,
     children,
+    loc,
   };
 }
 
@@ -291,6 +292,8 @@ export function parse(template) {
   // 根据template 产生一棵树  line  column  offest
 
   const context = createParserContext(template);
+
+  const start = getCursor(context);
   const children = parserChildren(context);
-  return createRoot(children);
+  return createRoot(children, getSelection(context, start));
 }
