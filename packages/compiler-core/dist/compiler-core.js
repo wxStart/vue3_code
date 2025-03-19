@@ -36,9 +36,9 @@ function advanceBy(context, endIndex) {
   context.source = source.slice(endIndex);
 }
 function parseTextData(context, endIndex) {
-  const contnet = context.source.slice(0, endIndex);
+  const content = context.source.slice(0, endIndex);
   advanceBy(context, endIndex);
-  return contnet;
+  return content;
 }
 function getCursor(context) {
   const { line, column, offest } = context;
@@ -62,10 +62,10 @@ function parseText(context) {
     }
   }
   let start = getCursor(context);
-  let contnet = parseTextData(context, endIndex);
+  let content = parseTextData(context, endIndex);
   return {
     type: 2 /* TEXT */,
-    contnet,
+    content,
     loc: getSelection(context, start)
   };
 }
@@ -204,7 +204,19 @@ function parserChildren(context) {
     }
     nodes.push(node);
   }
-  return nodes;
+  console.log("nodes: 111", nodes);
+  for (let index = 0; index < nodes.length; index++) {
+    const node = nodes[index];
+    if (node.type == 2 /* TEXT */) {
+      debugger;
+      if (!/[^\t\r\n\f ]/.test(node.content)) {
+        nodes[index] = null;
+      } else {
+        node.content = node.content.replace(/[\t\r\n\f ]+/g, " ");
+      }
+    }
+  }
+  return nodes.filter(Boolean);
 }
 function createRoot(children) {
   return {

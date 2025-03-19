@@ -51,9 +51,9 @@ function advanceBy(context, endIndex) {
 }
 
 function parseTextData(context, endIndex) {
-  const contnet = context.source.slice(0, endIndex);
+  const content = context.source.slice(0, endIndex);
   advanceBy(context, endIndex); // 删掉的位置
-  return contnet;
+  return content;
 }
 
 function getCursor(context) {
@@ -82,11 +82,11 @@ function parseText(context) {
   // 创建信息 行列
   let start = getCursor(context);
   // 0 ~ endIndex  为文本内容
-  let contnet = parseTextData(context, endIndex);
+  let content = parseTextData(context, endIndex);
 
   return {
     type: NodeTypes.TEXT,
-    contnet,
+    content,
     loc: getSelection(context, start),
   };
 }
@@ -152,7 +152,8 @@ function parseAttributeValue(context) {
     console.log(
       'context.source.match(/([^ \t\r\n/>])+/): ',
       context.source.match(/([^ \t\r\n/>])+/)
-    );debugger
+    );
+    debugger;
     content = context.source.match(/([^ \t\r\n/>])+/)[0];
     advanceBy(context, content.length); // 去除值
     advanceBySpaces(context);
@@ -167,14 +168,14 @@ function parseAttribute(context) {
   const name = match[0]; // 属性名
   advanceBy(context, name.length);
   let vlaue;
-  debugger
+  debugger;
   if (/^[ \t\r\n\f]*=/.test(context.source)) {
     advanceBySpaces(context);
     advanceBy(context, 1); // 删=
     advanceBySpaces(context);
     vlaue = parseAttributeValue(context);
   }
-  debugger
+  debugger;
 
   const loc = getSelection(context, start); // 处理完属性 计算属性的位置信息
   return {
@@ -263,7 +264,20 @@ function parserChildren(context) {
     }
     nodes.push(node);
   }
-  return nodes;
+  console.log('nodes: 111', nodes);
+
+  for (let index = 0; index < nodes.length; index++) {
+    const node = nodes[index];
+    if (node.type == NodeTypes.TEXT) {
+      debugger;
+      if (!/[^\t\r\n\f ]/.test(node.content)) {
+        nodes[index] = null;
+      } else {
+        node.content = node.content.replace(/[\t\r\n\f ]+/g, ' ');
+      }
+    }
+  }
+  return nodes.filter(Boolean);
 }
 
 function createRoot(children) {

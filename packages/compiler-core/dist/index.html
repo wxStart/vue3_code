@@ -10,18 +10,25 @@
     <script type="module">
       import { compile, parse } from './compiler-core.js';
 
-    //   let template = `s
-      
-      
-      
-    //   dad <a></a> {{ name}}`;
-    //   let template = `{{    name   }}`;
+      //   let template = `s
 
-    // 元素
-    // let template = `<div    />`;
+      //   dad <a></a> {{ name}}`;
+      //   let template = `{{    name   }}`;
 
-    let template  =`<div a = 123    b='a' c = "123" >123 {{abc}}<div>{{name}}</div></div>`
-    
+      // 元素
+      // let template = `<div    />`;
+
+      // let template  =`<div a = 123    b='a' c = "123" >123 {{abc}}<div>{{name}}</div></div>`
+
+      let template = `<div a = 123    b='a' c = "123" >
+        123    
+        {{abc}}     
+        
+        <div>{{name}}</div>
+        <div></div>
+        <div></div>
+    </div>`;
+
       console.log(' pars: ', template.length, parse(template));
     </script>
   </body>
