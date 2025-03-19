@@ -46,8 +46,6 @@ function getCursor(context) {
 }
 function getSelection(context, start, end) {
   end = end || getCursor(context);
-  console.log("end.offset: ", end.offest);
-  console.log("start.offest: ", start.offest);
   return {
     start,
     end,
@@ -79,7 +77,6 @@ function parseInterpolation(context) {
   const innerEnd = getCursor(context);
   const rawContentLength = colseIndex - 2;
   const preContent = parseTextData(context, rawContentLength);
-  console.log("preContent:111111 parseInterpolation ", preContent);
   const content = preContent.trim();
   const startOffect = preContent.indexOf(content);
   if (startOffect > 0) {
@@ -99,18 +96,77 @@ function parseInterpolation(context) {
   };
 }
 function advanceBySpaces(context) {
-  const match = /^[ \t\r\n]/.exec(context.source);
+  const match = /^[ \t\r\n\f]*/.exec(context.source);
   if (match) {
     advanceBy(context, match[0].length);
   }
+}
+function parseAttributeValue(context) {
+  let quote = context.source[0];
+  const isQuoted = quote === "'" || quote === '"';
+  let content;
+  if (isQuoted) {
+    advanceBy(context, 1);
+    const endIndex = context.source.indexOf(quote, 1);
+    content = parseTextData(context, endIndex);
+    advanceBy(context, 1);
+    advanceBySpaces(context);
+  } else {
+    console.log(
+      "context.source.match(/([^ 	\r\n/>])+/): ",
+      context.source.match(/([^ \t\r\n/>])+/)
+    );
+    debugger;
+    content = context.source.match(/([^ \t\r\n/>])+/)[0];
+    advanceBy(context, content.length);
+    advanceBySpaces(context);
+  }
+  return content;
+}
+function parseAttribute(context) {
+  const start = getCursor(context);
+  let match = /^[^\t\r\n\f />][^\t\r\n\f />=]*/.exec(context.source);
+  console.log("parseAttribute match: ", match);
+  const name = match[0];
+  advanceBy(context, name.length);
+  let vlaue;
+  debugger;
+  if (/^[ \t\r\n\f]*=/.test(context.source)) {
+    advanceBySpaces(context);
+    advanceBy(context, 1);
+    advanceBySpaces(context);
+    vlaue = parseAttributeValue(context);
+  }
+  debugger;
+  const loc = getSelection(context, start);
+  return {
+    type: 6 /* ATTRIBUTE */,
+    name,
+    value: {
+      type: 2 /* TEXT */,
+      content: vlaue,
+      loc
+    },
+    loc: getSelection(context, start)
+  };
+}
+function parseAttributes(context) {
+  const props = [];
+  while (context.source.length > 0 && !context.source.startsWith(">")) {
+    props.push(parseAttribute(context));
+    advanceBySpaces(context);
+  }
+  return props;
 }
 function parseTag(context) {
   const start = getCursor(context);
   const match = /^<\/?([a-z][^ \t\r\n/>]*)/.exec(context.source);
   console.log("match: ", match);
-  const tag = match[1].trim();
+  const tag = match[1];
   advanceBy(context, match[0].length);
   advanceBySpaces(context);
+  let props = parseAttributes(context);
+  console.log("props: ", props);
   let isSelfClosing = context.source.startsWith("/>");
   if (isSelfClosing) {
   }
@@ -120,6 +176,7 @@ function parseTag(context) {
     tag,
     isSelfClosing,
     children: [],
+    props,
     loc: getSelection(context, start)
   };
 }
@@ -142,10 +199,8 @@ function parserChildren(context) {
       node = parseInterpolation(context);
     } else if (c[0] == "<") {
       node = parseElement(context);
-      debugger;
     } else {
       node = parseText(context);
-      console.log("node: ", node);
     }
     nodes.push(node);
   }

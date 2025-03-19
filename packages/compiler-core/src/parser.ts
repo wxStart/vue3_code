@@ -14,7 +14,7 @@ function isEnd(context) {
   const c = context.source;
   if (c.startsWith('</')) {
     // 孩子遇到这种的时候也是结束的 <div><span></span></div>
-    // 此要返回 sapn 处理完成了  soucre =  </div> 但是也是要返回的 
+    // 此要返回 sapn 处理完成了  source =  </div> 但是也是要返回的
     /**
      if (context.source.startsWith('</')) {
          parseTag(context); 
@@ -63,8 +63,6 @@ function getCursor(context) {
 }
 function getSelection(context, start, end?) {
   end = end || getCursor(context);
-  console.log('end.offset: ', end.offest);
-  console.log('start.offest: ', start.offest);
 
   return {
     start,
@@ -107,7 +105,6 @@ function parseInterpolation(context) {
   const rawContentLength = colseIndex - 2; // 已经移除了 {{  所以减去2
 
   const preContent = parseTextData(context, rawContentLength); // 可以拿到文本内容 并且可以更新位置信息
-  console.log('preContent:111111 parseInterpolation ', preContent);
 
   const content = preContent.trim();
 
@@ -134,10 +131,73 @@ function parseInterpolation(context) {
 
 // 删除空格
 function advanceBySpaces(context) {
-  const match = /^[ \t\r\n]/.exec(context.source);
+  const match = /^[ \t\r\n\f]*/.exec(context.source);
   if (match) {
     advanceBy(context, match[0].length);
   }
+}
+
+function parseAttributeValue(context) {
+  let quote = context.source[0];
+
+  const isQuoted = quote === "'" || quote === '"';
+  let content;
+  if (isQuoted) {
+    advanceBy(context, 1); // 去除第一个引号
+    const endIndex = context.source.indexOf(quote, 1);
+    content = parseTextData(context, endIndex);
+    advanceBy(context, 1); // 去除值后面的引号
+    advanceBySpaces(context);
+  } else {
+    console.log(
+      'context.source.match(/([^ \t\r\n/>])+/): ',
+      context.source.match(/([^ \t\r\n/>])+/)
+    );debugger
+    content = context.source.match(/([^ \t\r\n/>])+/)[0];
+    advanceBy(context, content.length); // 去除值
+    advanceBySpaces(context);
+  }
+
+  return content;
+}
+function parseAttribute(context) {
+  const start = getCursor(context);
+  let match = /^[^\t\r\n\f />][^\t\r\n\f />=]*/.exec(context.source);
+  console.log('parseAttribute match: ', match);
+  const name = match[0]; // 属性名
+  advanceBy(context, name.length);
+  let vlaue;
+  debugger
+  if (/^[ \t\r\n\f]*=/.test(context.source)) {
+    advanceBySpaces(context);
+    advanceBy(context, 1); // 删=
+    advanceBySpaces(context);
+    vlaue = parseAttributeValue(context);
+  }
+  debugger
+
+  const loc = getSelection(context, start); // 处理完属性 计算属性的位置信息
+  return {
+    type: NodeTypes.ATTRIBUTE,
+    name,
+    value: {
+      type: NodeTypes.TEXT,
+      content: vlaue,
+      loc: loc,
+    },
+    loc: getSelection(context, start),
+  };
+}
+
+function parseAttributes(context) {
+  const props = [];
+
+  while (context.source.length > 0 && !context.source.startsWith('>')) {
+    props.push(parseAttribute(context));
+    advanceBySpaces(context); // 去空格
+  }
+
+  return props;
 }
 
 function parseTag(context) {
@@ -145,9 +205,15 @@ function parseTag(context) {
   // https://regexper.com/
   const match = /^<\/?([a-z][^ \t\r\n/>]*)/.exec(context.source);
   console.log('match: ', match);
-  const tag = match[1].trim();
+  const tag = match[1];
   advanceBy(context, match[0].length);
   advanceBySpaces(context);
+
+  // 这里有可能有属性 <div  a="1" b='2' ></div>
+
+  let props = parseAttributes(context);
+  console.log('props: ', props);
+
   let isSelfClosing = context.source.startsWith('/>');
   if (isSelfClosing) {
   }
@@ -158,6 +224,7 @@ function parseTag(context) {
     tag,
     isSelfClosing,
     children: [],
+    props,
     loc: getSelection(context, start),
   };
 }
@@ -190,11 +257,9 @@ function parserChildren(context) {
     } else if (c[0] == '<') {
       // 元素  </div>
       node = parseElement(context);
-      debugger;
     } else {
       // 文本   abd {{name}} 或者是 abd  <div></div>
       node = parseText(context);
-      console.log('node: ', node);
     }
     nodes.push(node);
   }
@@ -213,6 +278,5 @@ export function parse(template) {
 
   const context = createParserContext(template);
   const children = parserChildren(context);
-
   return createRoot(children);
 }
