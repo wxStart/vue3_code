@@ -10,6 +10,10 @@ function createParserContext(content) {
   };
 }
 function isEnd(context) {
+  const c = context.source;
+  if (c.startsWith("</")) {
+    return true;
+  }
   return !context.source;
 }
 function advancePositionWithMutation(context, source, endIndex) {
@@ -115,11 +119,14 @@ function parseTag(context) {
     type: 1 /* ELEMENT */,
     tag,
     isSelfClosing,
+    children: [],
     loc: getSelection(context, start)
   };
 }
 function parseElement(context) {
   let ele = parseTag(context);
+  let children = parserChildren(context);
+  ele.children = children;
   if (context.source.startsWith("</")) {
     parseTag(context);
   }

@@ -11,6 +11,17 @@ function createParserContext(content) {
 }
 
 function isEnd(context) {
+  const c = context.source;
+  if (c.startsWith('</')) {
+    // 孩子遇到这种的时候也是结束的 <div><span></span></div>
+    // 此要返回 sapn 处理完成了  soucre =  </div> 但是也是要返回的 
+    /**
+     if (context.source.startsWith('</')) {
+         parseTag(context); 
+     } 
+     */
+    return true;
+  }
   return !context.source; // 内容没有
 }
 
@@ -146,6 +157,7 @@ function parseTag(context) {
     type: NodeTypes.ELEMENT,
     tag,
     isSelfClosing,
+    children: [],
     loc: getSelection(context, start),
   };
 }
@@ -153,12 +165,17 @@ function parseTag(context) {
 function parseElement(context) {
   // 解析标签 <br /> <div a="12" ></div>
   let ele = parseTag(context);
+
+  // 这里是元素里面的孩子
+  let children = parserChildren(context); // 处理儿子
+  ele.children = children;
+
   if (context.source.startsWith('</')) {
     parseTag(context); // <div></div> 移除后续的</div>
   }
   ele.loc = getSelection(context, ele.loc.start); // 重新计算位置信息
 
-  return ele
+  return ele;
 }
 
 function parserChildren(context) {
