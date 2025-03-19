@@ -94,6 +94,38 @@ function parseInterpolation(context) {
     loc: getSelection(context, start)
   };
 }
+function advanceBySpaces(context) {
+  const match = /^[\t\r\n]/.exec(context.source);
+  if (match) {
+    advanceBy(context, match[0].length);
+  }
+}
+function parseTag(context) {
+  const start = getCursor(context);
+  const match = /^<\/?([a-z][^\t\r\n/>]*)/.exec(context.source);
+  console.log("match: ", match);
+  const tag = match[1].trim();
+  advanceBy(context, match[0].length);
+  advanceBySpaces(context);
+  let isSelfClosing = context.source.startsWith("/>");
+  if (isSelfClosing) {
+  }
+  advanceBy(context, isSelfClosing ? 2 : 1);
+  return {
+    type: 1 /* ELEMENT */,
+    tag,
+    isSelfClosing,
+    loc: getSelection(context, start)
+  };
+}
+function parseElement(context) {
+  let ele = parseTag(context);
+  if (context.source.startsWith("</")) {
+    parseTag(context);
+  }
+  ele.loc = getSelection(context, ele.loc.start);
+  return ele;
+}
 function parserChildren(context) {
   const nodes = [];
   while (!isEnd(context)) {
@@ -101,8 +133,9 @@ function parserChildren(context) {
     let node;
     if (c.startsWith("{{")) {
       node = parseInterpolation(context);
-      debugger;
     } else if (c[0] == "<") {
+      node = parseElement(context);
+      debugger;
     } else {
       node = parseText(context);
       console.log("node: ", node);

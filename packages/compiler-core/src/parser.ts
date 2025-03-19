@@ -85,8 +85,7 @@ function parseText(context) {
 function parseInterpolation(context) {
   let start = getCursor(context); // 获取开始的位置
 
-  const colseIndex = context.source.indexOf('}}','{{'.length); // 从‘{{” 字符位置开始查找
-  
+  const colseIndex = context.source.indexOf('}}', '{{'.length); // 从‘{{” 字符位置开始查找
 
   advanceBy(context, 2); // 删除 {{
 
@@ -108,18 +107,58 @@ function parseInterpolation(context) {
     advancePositionWithMutation(innerStart, preContent, startOffect); //! {{    name     }} 把{{ 和name之间的空进行偏移 就知道name的offest了
   }
   let endOffset = startOffect + content.length;
-//   更新 innerEnd 的信息  //! 更新 位置1111  innerEnd = { line, column, offest }的信息
+  //   更新 innerEnd 的信息  //! 更新 位置1111  innerEnd = { line, column, offest }的信息
   advancePositionWithMutation(innerEnd, preContent, endOffset);
   advanceBy(context, 2); // 删除 }}
   return {
     type: NodeTypes.INTERPOLATION,
-    content:{
-        type: NodeTypes.SIMPLE_EXPRESSION,
-        content,
-        loc: getSelection(context, innerStart, innerEnd),
+    content: {
+      type: NodeTypes.SIMPLE_EXPRESSION,
+      content,
+      loc: getSelection(context, innerStart, innerEnd),
     },
     loc: getSelection(context, start),
   };
+}
+
+// 删除空格
+function advanceBySpaces(context) {
+  const match = /^[\t\r\n]/.exec(context.source);
+  if (match) {
+    advanceBy(context, match[0].length);
+  }
+}
+
+function parseTag(context) {
+  const start = getCursor(context);
+  // https://regexper.com/
+  const match = /^<\/?([a-z][^\t\r\n/>]*)/.exec(context.source);
+  console.log('match: ', match);
+  const tag = match[1].trim();
+  advanceBy(context, match[0].length);
+  advanceBySpaces(context);
+  let isSelfClosing = context.source.startsWith('/>');
+  if (isSelfClosing) {
+  }
+  advanceBy(context, isSelfClosing ? 2 : 1); // 看是删除 "/>"" 还是 ">"
+
+  return {
+    type: NodeTypes.ELEMENT,
+    tag,
+    isSelfClosing,
+    loc: getSelection(context, start),
+  };
+}
+
+function parseElement(context) {
+  // 解析标签 <br /> <div a="12" ></div>
+  let ele = parseTag(context);
+  if (context.source.startsWith('</')) {
+    parseTag(context); // <div></div> 移除后续的</div>
+  }
+  ele.loc = getSelection(context, ele.loc.start); // 重新计算位置信息
+
+  return ele
 }
 
 function parserChildren(context) {
@@ -131,9 +170,10 @@ function parserChildren(context) {
     if (c.startsWith('{{')) {
       // {{  xxx }}
       node = parseInterpolation(context);
-      debugger
     } else if (c[0] == '<') {
       // 元素  </div>
+      node = parseElement(context);
+      debugger;
     } else {
       // 文本   abd {{name}} 或者是 abd  <div></div>
       node = parseText(context);
@@ -141,7 +181,7 @@ function parserChildren(context) {
     }
     nodes.push(node);
   }
-  return nodes
+  return nodes;
 }
 
 function createRoot(children) {
