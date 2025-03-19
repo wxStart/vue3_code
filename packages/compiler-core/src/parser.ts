@@ -134,7 +134,7 @@ function parseInterpolation(context) {
 
 // 删除空格
 function advanceBySpaces(context) {
-  const match = /^[\t\r\n]/.exec(context.source);
+  const match = /^[ \t\r\n]/.exec(context.source);
   if (match) {
     advanceBy(context, match[0].length);
   }

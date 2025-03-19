@@ -99,7 +99,7 @@ function parseInterpolation(context) {
   };
 }
 function advanceBySpaces(context) {
-  const match = /^[\t\r\n]/.exec(context.source);
+  const match = /^[ \t\r\n]/.exec(context.source);
   if (match) {
     advanceBy(context, match[0].length);
   }
