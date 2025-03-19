@@ -6,9 +6,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev":"npm run dev:runtime-dom",
+    "dev":"npm run dev:compiler-core",
     "dev:reactivity": "node scripts/dev.js reactivity -f esm",
-    "dev:runtime-dom": "node scripts/dev.js runtime-dom -f esm"
+    "dev:runtime-dom": "node scripts/dev.js runtime-dom -f esm",
+    "dev:compiler-core": "node scripts/dev.js compiler-core -f esm"
   },
   "keywords": [],
   "author": "",
