@@ -67,20 +67,49 @@ function parseText(context) {
     loc: getSelection(context, start)
   };
 }
+function parseInterpolation(context) {
+  let start = getCursor(context);
+  const colseIndex = context.source.indexOf("}}", "{{".length);
+  advanceBy(context, 2);
+  const innerStart = getCursor(context);
+  const innerEnd = getCursor(context);
+  const rawContentLength = colseIndex - 2;
+  const preContent = parseTextData(context, rawContentLength);
+  console.log("preContent:111111 parseInterpolation ", preContent);
+  const content = preContent.trim();
+  const startOffect = preContent.indexOf(content);
+  if (startOffect > 0) {
+    advancePositionWithMutation(innerStart, preContent, startOffect);
+  }
+  let endOffset = startOffect + content.length;
+  advancePositionWithMutation(innerEnd, preContent, endOffset);
+  advanceBy(context, 2);
+  return {
+    type: 5 /* INTERPOLATION */,
+    content: {
+      type: 4 /* SIMPLE_EXPRESSION */,
+      content,
+      loc: getSelection(context, innerStart, innerEnd)
+    },
+    loc: getSelection(context, start)
+  };
+}
 function parserChildren(context) {
   const nodes = [];
   while (!isEnd(context)) {
     const c = context.source;
     let node;
     if (c.startsWith("{{")) {
+      node = parseInterpolation(context);
+      debugger;
     } else if (c[0] == "<") {
     } else {
       node = parseText(context);
       console.log("node: ", node);
-      debugger;
     }
     nodes.push(node);
   }
+  return nodes;
 }
 function createRoot(children) {
   return {
@@ -102,4 +131,6 @@ export {
   compile,
   parse
 };
+//! 位置1111  (这里拿空格的) 这里拿到 插值语法中 name前面的空格 中第一个也就是 插值"{{"后面的位置  return { line, column, offest };
+//! {{    name     }} 把{{ 和name之间的空进行偏移 就知道name的offest了
 //# sourceMappingURL=compiler-core.js.map
