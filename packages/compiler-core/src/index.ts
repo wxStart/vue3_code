@@ -4,8 +4,15 @@
 // 3. 转化成render函数
 
 import { parse } from './parser';
+import { transform } from './transform';
 
 export { parse };
+
 export function compile(template) {
   const ast = parse(template);
+
+  //  这里转化要进行收集所需要的方法  createElementVnode
+  transform(ast);
+debugger
+  return ast;
 }

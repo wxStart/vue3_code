@@ -153,7 +153,6 @@ function parseAttributeValue(context) {
       'context.source.match(/([^ \t\r\n/>])+/): ',
       context.source.match(/([^ \t\r\n/>])+/)
     );
-    debugger;
     content = context.source.match(/([^ \t\r\n/>])+/)[0];
     advanceBy(context, content.length); // 去除值
     advanceBySpaces(context);
@@ -168,14 +167,12 @@ function parseAttribute(context) {
   const name = match[0]; // 属性名
   advanceBy(context, name.length);
   let vlaue;
-  debugger;
   if (/^[ \t\r\n\f]*=/.test(context.source)) {
     advanceBySpaces(context);
     advanceBy(context, 1); // 删=
     advanceBySpaces(context);
     vlaue = parseAttributeValue(context);
   }
-  debugger;
 
   const loc = getSelection(context, start); // 处理完属性 计算属性的位置信息
   return {
@@ -269,7 +266,6 @@ function parserChildren(context) {
   for (let index = 0; index < nodes.length; index++) {
     const node = nodes[index];
     if (node.type == NodeTypes.TEXT) {
-      debugger;
       if (!/[^\t\r\n\f ]/.test(node.content)) {
         nodes[index] = null;
       } else {

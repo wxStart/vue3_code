@@ -20,16 +20,12 @@
 
       // let template  =`<div a = 123    b='a' c = "123" >123 {{abc}}<div>{{name}}</div></div>`
 
-      let template = `<div a = 123    b='a' c = "123" >
-        123    
-        {{abc}}     
-        
-        <div>{{name}}</div>
-        <div></div>
-        <div></div>
-    </div>`;
+      //   let template = `<div a = 123    b='a' c = "123" >
+      //     {{a123}}    asd <div></div>{{name}}    asd
+      // </div>`;
 
-      console.log(' pars: ', template.length, parse(template));
+      let template = `<div a='1'></div> <div b='2'></div>`;
+      console.log(' pars: ', template.length, compile(template));
     </script>
   </body>
 </html>

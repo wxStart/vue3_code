@@ -1,3 +1,49 @@
+// packages/compiler-core/src/runtimeHelpers.ts
+var TO_DISPLAY_STRING = Symbol("TO_DISPLAY_STRING");
+var CREATE_TEXT_VNODE = Symbol("CREATE_TEXT_VNODE");
+var CREATE_ELEMENT_VNODE = Symbol("CREATE_ELEMENT_VNODE");
+var OPEN_BLOCK = Symbol("OPEN_BLOCK");
+var CREATE_ELEMENT_BLOCK = Symbol("CREATE_ELEMENT_BLOCK");
+var Fragment = Symbol("Fragment");
+var helperMap = {
+  [TO_DISPLAY_STRING]: "toDisplayString",
+  [CREATE_TEXT_VNODE]: "createTextVnode",
+  [CREATE_ELEMENT_VNODE]: "createElementVnode",
+  [OPEN_BLOCK]: "openBlock",
+  [CREATE_ELEMENT_BLOCK]: "createElementBlock",
+  [Fragment]: "Fragment"
+};
+
+// packages/compiler-core/src/ast.ts
+function createCallExpression(context, arg) {
+  const name = context.helper(CREATE_TEXT_VNODE);
+  return {
+    type: 14 /* JS_CALL_EXPRESSION */,
+    // create
+    arguments: arg,
+    callee: name
+  };
+}
+function createVnodeCall(context, tag, prosp, children) {
+  let name = tag;
+  if (tag !== Fragment) {
+    name = context.helper(CREATE_ELEMENT_VNODE);
+  }
+  return {
+    type: 13 /* VNODE_CALL */,
+    tag,
+    prosp,
+    children,
+    callee: name
+  };
+}
+function createObjectExpression(properies) {
+  return {
+    type: 15 /* JS_OBJECT_EXPRESSION */,
+    properies
+  };
+}
+
 // packages/compiler-core/src/parser.ts
 function createParserContext(content) {
   return {
@@ -116,7 +162,6 @@ function parseAttributeValue(context) {
       "context.source.match(/([^ 	\r\n/>])+/): ",
       context.source.match(/([^ \t\r\n/>])+/)
     );
-    debugger;
     content = context.source.match(/([^ \t\r\n/>])+/)[0];
     advanceBy(context, content.length);
     advanceBySpaces(context);
@@ -130,14 +175,12 @@ function parseAttribute(context) {
   const name = match[0];
   advanceBy(context, name.length);
   let vlaue;
-  debugger;
   if (/^[ \t\r\n\f]*=/.test(context.source)) {
     advanceBySpaces(context);
     advanceBy(context, 1);
     advanceBySpaces(context);
     vlaue = parseAttributeValue(context);
   }
-  debugger;
   const loc = getSelection(context, start);
   return {
     type: 6 /* ATTRIBUTE */,
@@ -208,7 +251,6 @@ function parserChildren(context) {
   for (let index = 0; index < nodes.length; index++) {
     const node = nodes[index];
     if (node.type == 2 /* TEXT */) {
-      debugger;
       if (!/[^\t\r\n\f ]/.test(node.content)) {
         nodes[index] = null;
       } else {
@@ -232,9 +274,199 @@ function parse(template) {
   return createRoot(children, getSelection(context, start));
 }
 
+// packages/compiler-core/src/transforms/transformElement.ts
+function transformElement(node, context) {
+  if (node.type === 1 /* ELEMENT */) {
+    console.log("\u5143\u7D20", node);
+    return function() {
+      console.log("\u5143\u7D20 \u5EF6\u8FDF\u51FD\u6570\uFF1A \u6587\u672C\u5904\u7406\u540E", node);
+      const { tag: vnodeTag, props, children } = node;
+      let properties = [];
+      for (let i = 0; i < props.length; i++) {
+        properties.push({
+          key: props[i].name,
+          value: props[i].value.content
+        });
+      }
+      const propsExpression = properties.length ? createObjectExpression(properties) : null;
+      let vnodeChildren = null;
+      if (children.length === 1) {
+        vnodeChildren = children[0];
+      } else if (children.length > 1) {
+        vnodeChildren = children;
+      }
+      node.codegenNode = createVnodeCall(
+        context,
+        vnodeTag,
+        propsExpression,
+        vnodeChildren
+      );
+      debugger;
+    };
+  }
+}
+
+// packages/compiler-core/src/transforms/transformExprrssion.ts
+function transformExprrssion(node, context) {
+  if (node.type === 5 /* INTERPOLATION */) {
+    debugger;
+    let content = node.content.content;
+    node.content.content = `_ctx.${content}`;
+  }
+}
+
+// packages/compiler-core/src/transforms/transformText.ts
+function isText(node) {
+  return node.type === 5 /* INTERPOLATION */ || node.type === 2 /* TEXT */;
+}
+function transformText(node, context) {
+  if (node.type === 1 /* ELEMENT */ || node.type == 0 /* ROOT */) {
+    console.log("\u5143\u7D20 \u4E2D\u7684\u6587\u672C", node);
+    return function() {
+      let container = null;
+      let children = node.children;
+      let hasText = false;
+      for (let i = 0; i < children.length; i++) {
+        let child = children[i];
+        if (isText(child)) {
+          hasText = true;
+          for (let j = i + 1; j < children.length; j++) {
+            if (isText(child)) {
+              let next = children[j];
+              if (isText(next)) {
+                if (!container) {
+                  container = children[i] = {
+                    type: 8 /* COMPOUND_EXPRESSION */,
+                    children: [child]
+                  };
+                }
+                container.children.push("+", next);
+                children.splice(j, 1);
+                j--;
+              } else {
+                container = null;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (!hasText || children.length == 1) {
+        return;
+      }
+      for (let i = 0; i < children.length; i++) {
+        const child = children[i];
+        if (isText(child) || child.type == 8 /* COMPOUND_EXPRESSION */) {
+          const args = [];
+          args.push(child);
+          if (child.type !== 2 /* TEXT */) {
+            args.push(1 /* TEXT */);
+          }
+          children[i] = {
+            type: 12 /* TEXT_CALL */,
+            // 标记说明需要 使用 createTextVnode
+            content: child,
+            codegenNode: createCallExpression(context, args)
+            // createTextVnode(内容，args)
+          };
+        }
+      }
+      console.log("\u6587\u672C \u5EF6\u8FDF\u51FD\u6570\uFF1A \u6587\u672C\u5904\u7406\u540E", node);
+    };
+  }
+}
+
+// packages/compiler-core/src/transform.ts
+function createTransformContext(root) {
+  const context = {
+    currentNode: root,
+    parent: null,
+    transformNode: [transformElement, transformText, transformExprrssion],
+    helpers: /* @__PURE__ */ new Map(),
+    helper(name) {
+      const count = context.helpers.get(name) || 0;
+      context.helpers.set(name, count + 1);
+      return name;
+    },
+    removeHelper(name) {
+      const count = context.helpers.get(name);
+      if (count) {
+        let c = count - 1;
+        if (!c) {
+          context.helpers.delete(name);
+        } else {
+          context.helpers.set(name, c);
+        }
+      }
+    }
+  };
+  return context;
+}
+function traverseNode(node, context) {
+  context.currentNode = node;
+  const transforms = context.transformNode;
+  const exits = [];
+  for (let i2 = 0; i2 < transforms.length; i2++) {
+    let exit = transforms[i2](node, context);
+    exit && exits.push(exit);
+  }
+  switch (node.type) {
+    case 0 /* ROOT */:
+    case 1 /* ELEMENT */:
+      for (let i2 = 0; i2 < node.children.length; i2++) {
+        context.parent = node;
+        traverseNode(node.children[i2], context);
+      }
+      break;
+    case 5 /* INTERPOLATION */:
+      context.helper(TO_DISPLAY_STRING);
+      break;
+  }
+  let i = exits.length;
+  if (i) {
+    while (i--) {
+      exits[i]();
+    }
+  }
+}
+function createRootCodegenNode(ast, context) {
+  let { children } = ast;
+  if (children.length == 1) {
+    let child = children[0];
+    if (child.type == 1 /* ELEMENT */) {
+      ast.codegenNode = child.codegenNode;
+      context.removeHelper(CREATE_ELEMENT_VNODE);
+      context.helper(CREATE_ELEMENT_BLOCK);
+      context.helper(OPEN_BLOCK);
+      ast.isBlock = true;
+    } else {
+      ast.codegenNode = child;
+    }
+  } else {
+    ast.codegenNode = createVnodeCall(
+      context,
+      context.helper(Fragment),
+      null,
+      children
+    );
+    context.helper(CREATE_ELEMENT_BLOCK);
+    context.helper(OPEN_BLOCK);
+    debugger;
+  }
+}
+function transform(ast) {
+  const context = createTransformContext(ast);
+  traverseNode(ast, context);
+  createRootCodegenNode(ast, context);
+  ast.helpers = [...context.helpers.keys()];
+}
+
 // packages/compiler-core/src/index.ts
 function compile(template) {
   const ast = parse(template);
+  transform(ast);
+  debugger;
+  return ast;
 }
 export {
   compile,
