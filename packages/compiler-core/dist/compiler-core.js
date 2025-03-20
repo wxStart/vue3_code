@@ -44,6 +44,114 @@ function createObjectExpression(properies) {
   };
 }
 
+// packages/compiler-core/src/generate.ts
+function createCodegenContext(ast) {
+  const context = {
+    code: ``,
+    level: 0,
+    helper(name) {
+      return `_${helperMap[name]}`;
+    },
+    push(code) {
+      context.code += code;
+    },
+    indent() {
+      newLine(++context.level);
+    },
+    deIndent(noNewLine = false) {
+      if (noNewLine) {
+        --context.level;
+      } else {
+        newLine(--context.level);
+      }
+    },
+    newLine() {
+      newLine(context.level);
+    }
+  };
+  function newLine(n) {
+    context.push("\n" + `  `.repeat(n));
+  }
+  return context;
+}
+function getFunctionPreamble(ast, context) {
+  const { push, indent, deIndent, newLine, helper } = context;
+  if (ast.helpers.length > 0) {
+    push(
+      `const { ${ast.helpers.map(
+        (item) => `${helperMap[item]}:${helper(item)}`
+      )} }  = Vue`
+    );
+    newLine();
+    newLine();
+  }
+  push(`return function render(_ctx){`);
+}
+function genText(node, context) {
+  context.push(JSON.stringify(node.content));
+}
+function genInterpolation(node, context) {
+  const { push, indent, deIndent, newLine, helper } = context;
+  push(`${helper(TO_DISPLAY_STRING)}(`);
+  genNode(node.content, context);
+  push(")");
+  debugger;
+}
+function genExpression(node, context) {
+  context.push(node.content);
+}
+function genVnodeCall(node, context) {
+  debugger;
+  const { push, indent, deIndent, newLine, helper } = context;
+  const { tag, props, children, isBlock } = node;
+  if (isBlock) {
+    push(`(${helper(OPEN_BLOCK)}(),`);
+  }
+  const h = isBlock ? CREATE_ELEMENT_BLOCK : CREATE_ELEMENT_VNODE;
+  console.log("helper[h]: ", helper[h]);
+  push(`${helper(h)}(`);
+  push(`)`);
+  if (isBlock) {
+    push(`)`);
+  }
+}
+function genNode(node, context) {
+  const { push, indent, deIndent, newLine } = context;
+  debugger;
+  switch (node.type) {
+    case 2 /* TEXT */:
+      genText(node, context);
+      break;
+    case 5 /* INTERPOLATION */:
+      genInterpolation(node, context);
+      break;
+    case 4 /* SIMPLE_EXPRESSION */:
+      genExpression(node, context);
+      break;
+    case 13 /* VNODE_CALL */:
+      genVnodeCall(node, context);
+      break;
+  }
+}
+function generate(ast) {
+  debugger;
+  const context = createCodegenContext(ast);
+  getFunctionPreamble(ast, context);
+  const { push, indent, deIndent, newLine, helper } = context;
+  indent();
+  push(`return `);
+  if (ast.codegenNode) {
+    genNode(ast.codegenNode, context);
+  } else {
+    push(`null`);
+  }
+  deIndent();
+  push(`}`);
+  console.log("context.code: ");
+  console.log(context.code);
+  return context.code;
+}
+
 // packages/compiler-core/src/parser.ts
 function createParserContext(content) {
   return {
@@ -438,11 +546,11 @@ function createRootCodegenNode(ast, context) {
       context.removeHelper(CREATE_ELEMENT_VNODE);
       context.helper(CREATE_ELEMENT_BLOCK);
       context.helper(OPEN_BLOCK);
-      ast.isBlock = true;
+      ast.codegenNode.isBlock = true;
     } else {
       ast.codegenNode = child;
     }
-  } else {
+  } else if (children.length > 0) {
     ast.codegenNode = createVnodeCall(
       context,
       context.helper(Fragment),
@@ -451,7 +559,7 @@ function createRootCodegenNode(ast, context) {
     );
     context.helper(CREATE_ELEMENT_BLOCK);
     context.helper(OPEN_BLOCK);
-    debugger;
+    ast.codegenNode.isBlock = true;
   }
 }
 function transform(ast) {
@@ -465,13 +573,14 @@ function transform(ast) {
 function compile(template) {
   const ast = parse(template);
   transform(ast);
-  debugger;
-  return ast;
+  const code = generate(ast);
+  return code;
 }
 export {
   compile,
   parse
 };
+//! 这里根据 tag, props, children, 再去生成内容 拼接等  就不写了 源码里面有很多生成 都没有写
 //! 位置1111  (这里拿空格的) 这里拿到 插值语法中 name前面的空格 中第一个也就是 插值"{{"后面的位置  return { line, column, offest };
 //! {{    name     }} 把{{ 和name之间的空进行偏移 就知道name的offest了
 //# sourceMappingURL=compiler-core.js.map

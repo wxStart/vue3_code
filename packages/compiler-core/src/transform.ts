@@ -87,16 +87,15 @@ function createRootCodegenNode(ast, context) {
       context.removeHelper(CREATE_ELEMENT_VNODE);
       context.helper(CREATE_ELEMENT_BLOCK);
       context.helper(OPEN_BLOCK);
-      ast.isBlock = true;
+      ast.codegenNode.isBlock = true;
     } else {
       /*
             let template = `DSADSAD`;
 
       */
       ast.codegenNode = child;
-
     }
-  } else {
+  } else if (children.length > 0) {
     /*
             let template = `<div a='1'></div> <div b='2'></div>`;
     */
@@ -109,7 +108,7 @@ function createRootCodegenNode(ast, context) {
     );
     context.helper(CREATE_ELEMENT_BLOCK);
     context.helper(OPEN_BLOCK);
-    debugger;
+    ast.codegenNode.isBlock = true;
   }
 }
 

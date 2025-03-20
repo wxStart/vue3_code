@@ -3,6 +3,7 @@
 // 2. 转化生成codegennode
 // 3. 转化成render函数
 
+import { generate } from './generate';
 import { parse } from './parser';
 import { transform } from './transform';
 
@@ -13,6 +14,7 @@ export function compile(template) {
 
   //  这里转化要进行收集所需要的方法  createElementVnode
   transform(ast);
-debugger
-  return ast;
+
+  const code = generate(ast);
+  return code;
 }
